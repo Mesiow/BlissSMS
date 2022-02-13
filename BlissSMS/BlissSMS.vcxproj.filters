@@ -18,13 +18,13 @@
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\System.cpp">
+    <ClCompile Include="Core\Bus.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Bus.cpp">
+    <ClCompile Include="Core\System.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Z80.cpp">
+    <ClCompile Include="Core\Z80.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

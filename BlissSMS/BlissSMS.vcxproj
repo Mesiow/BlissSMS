@@ -141,9 +141,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Core\Bus.cpp" />
-    <ClCompile Include="Core\System.cpp" />
-    <ClCompile Include="Core\Z80.cpp" />
+    <ClCompile Include="Core\Bus.c" />
+    <ClCompile Include="Core\System.c" />
+    <ClCompile Include="Core\Z80.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
