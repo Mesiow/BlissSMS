@@ -34,3 +34,8 @@ void systemRunEmulation(struct System* sys)
 		//update graphics buffer
 	}
 }
+
+void tickCpu(struct System* sys)
+{
+	u16 cpu_cycles = z80Clock(&sys->z80);
+}

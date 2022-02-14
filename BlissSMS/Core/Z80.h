@@ -24,6 +24,12 @@ struct ShadowedRegisters {
 	union Register hl;
 };
 
+
+//Processing modes for maskable interrupts
+enum IntMode {
+	Zero, One, Two
+};
+
 struct Z80 {
 	struct ShadowedRegisters shadowedregs;
 	union Register af;
@@ -36,7 +42,9 @@ struct Z80 {
 	u16 sp;
 	u16 pc;
 
+	enum IntMode interrupt_mode;
 	u16 cycles;
+	u8 interrupts;
 };
 
 struct Bus* memBus;
@@ -64,5 +72,11 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode);
 void executeIyInstruction(struct Z80* z80, u8 opcode);
 void executeIyBitInstruction(struct Z80* z80, u8 opcode);
 
+//immediate 16 bit loads into 16 bit register
+void loadReg16(struct Z80* z80, union Register *reg);
 
-void ld_reg16(struct Z80* z80);
+
+//Interrupt related instructions
+void di(struct Z80* z80);
+void ei(struct Z80* z80);
+void im(struct Z80* z80, enum IntMode interruptMode);

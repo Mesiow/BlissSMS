@@ -19,7 +19,9 @@ void z80Init(struct Z80* z80)
 	z80->sp = 0x0;
 	z80->pc = 0x0;
 
+	z80->interrupt_mode = Zero;
 	z80->cycles = 0;
+	z80->interrupts = 0;
 }
 
 void z80ConnectBus(struct Bus* bus)
@@ -120,6 +122,9 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
 		case 0x00: z80->cycles = 4; break;
+		case 0x01: loadReg16(z80, &z80->bc); break;
+		case 0xF3: di(z80); break;
+		case 0xFB: ei(z80); break;
 	}
 }
 
@@ -137,6 +142,14 @@ void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 
 void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 {
+	switch (opcode) {
+		case 0x46: im(z80, Zero); break;
+		case 0x56: im(z80, One); break;
+		case 0x5E: im(z80, Two); break;
+		case 0x66: im(z80, Zero); break;
+		case 0x76: im(z80, One); break;
+		case 0x7E: im(z80, Two); break;
+	}
 }
 
 void executeIyInstruction(struct Z80* z80, u8 opcode)
@@ -145,4 +158,31 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 
 void executeIyBitInstruction(struct Z80* z80, u8 opcode)
 {
+}
+
+void loadReg16(struct Z80 *z80, union Register *reg)
+{
+	printf("ld 16\n");
+	reg->value = z80FetchU16(z80);
+	z80->cycles = 10;
+}
+
+void di(struct Z80* z80)
+{
+	printf("di\n");
+	z80->interrupts = 0;
+	z80->cycles = 4;
+}
+
+void ei(struct Z80* z80)
+{
+	z80->interrupts = 1;
+	z80->cycles = 4;
+}
+
+void im(struct Z80* z80, enum IntMode interruptMode)
+{
+	printf("im\n");
+	z80->interrupt_mode = interruptMode;
+	z80->cycles = 8;
 }
