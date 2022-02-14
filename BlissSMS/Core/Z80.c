@@ -66,7 +66,7 @@ u16 z80FetchU16(struct Z80* z80)
 	return ((hi << 8) | lo);
 }
 
-u8 z80Clock(struct Z80* z80)
+u16 z80Clock(struct Z80* z80)
 {
 	u8 opcode = z80ReadU8(z80->pc);
 	z80->pc++;

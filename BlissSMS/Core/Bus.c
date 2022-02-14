@@ -30,26 +30,27 @@ u8 memoryBusReadU8(struct Bus* bus, u16 address)
 			return bus->bios[address & (BIOS_SIZE - 1)];
 		}
 	}
+	else {
+		if (address >= ROM_START && address <= ROM_END) {
+			return bus->rom[address & (ROM_SIZE - 1)];
+		}
+		else if (address >= ROM_SLOT_0_START && address <= ROM_SLOT_0_END) {
+			return bus->romslot0[address & (ROM_MAPPER_0_SIZE - 1)];
+		}
+		else if (address >= ROM_SLOT_1_START && address <= ROM_SLOT_1_END) {
+			return bus->romslot1[address & (ROM_MAPPER_1_SIZE - 1)];
+		}
+		else if (address >= RAM_SLOT_2_START && address <= RAM_SLOT_2_END) {
+			return bus->ramslot2[address & (RAM_MAPPER_2_SIZE - 1)];
+		}
+		else if (address >= SYSRAM_START && address <= SYSRAM_END) {
+			return bus->systemRam[address & (SYSRAM_SIZE - 1)];
+		}
 
-	if (address >= ROM_START && address <= ROM_END) {
-		return bus->rom[address & (ROM_SIZE - 1)];
+		//Mirrored system ram
+		else if (address >= 0xE000 && address <= 0xFFFF) {
+			return bus->systemRam[address & 0xDFFF];
+		}
+		return 0x0;
 	}
-	else if (address >= ROM_SLOT_0_START && address <= ROM_SLOT_0_END) {
-		return bus->romslot0[address & (ROM_MAPPER_0_SIZE - 1)];
-	}
-	else if (address >= ROM_SLOT_1_START && address <= ROM_SLOT_1_END) {
-		return bus->romslot1[address & (ROM_MAPPER_1_SIZE - 1)];
-	}
-	else if (address >= RAM_SLOT_2_START && address <= RAM_SLOT_2_END) {
-		return bus->ramslot2[address & (RAM_MAPPER_2_SIZE - 1)];
-	}
-	else if (address >= SYSRAM_START && address <= SYSRAM_END) { 
-		return bus->systemRam[address & (SYSRAM_SIZE - 1)];
-	}
-
-	//Mirrored system ram
-	else if (address >= 0xE000 && address <= 0xFFFF) {
-		return bus->systemRam[address & 0xDFFF];
-	}
-	return 0x0;
 }

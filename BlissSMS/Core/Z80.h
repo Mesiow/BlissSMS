@@ -36,13 +36,8 @@ struct Z80 {
 	u16 sp;
 	u16 pc;
 
-	u8 cycles;
+	u16 cycles;
 };
-
-typedef struct Instruction {
-	u8(*execute)(struct Z80*);
-	u8 cycles;
-}Instruction;
 
 struct Bus* memBus;
 
@@ -55,7 +50,7 @@ u8 z80ReadU8(u16 address);
 u8 z80FetchU8(struct Z80 *z80);
 u16 z80ReadU16(u16 address);
 u16 z80FetchU16(struct Z80* z80);
-u8 z80Clock(struct Z80* z80);
+u16 z80Clock(struct Z80* z80);
 
 void executeInstruction(struct Z80* z80, u8 opcode);
 void executeMainInstruction(struct Z80* z80, u8 opcode);
