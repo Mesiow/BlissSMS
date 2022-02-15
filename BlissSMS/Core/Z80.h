@@ -54,6 +54,8 @@ void z80ConnectBus(struct Bus* bus);
 void z80SetFlag(struct Z80* z80, u8 flags);
 void z80SetFlagCond(struct Z80* z80, u8 cond, u8 flags);
 
+void z80WriteU8(u8 value, u16 address);
+
 u8 z80ReadU8(u16 address);
 u8 z80FetchU8(struct Z80 *z80);
 u16 z80ReadU16(u16 address);
@@ -75,8 +77,12 @@ void executeIyBitInstruction(struct Z80* z80, u8 opcode);
 //immediate 16 bit loads into 16 bit register
 void loadReg16(struct Z80* z80, union Register *reg);
 
-//Branches/Jumps
+//Branches/Jumps/Returns
 void jrImm(struct Z80* z80);
+void rst(struct Z80* z80, u8 vector);
+
+//Stack
+void push(struct Z80* z80, union Register* reg);
 
 //Interrupt related instructions
 void di(struct Z80* z80);

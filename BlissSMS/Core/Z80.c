@@ -130,6 +130,16 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x01: loadReg16(z80, &z80->bc); break;
 		case 0x31: loadReg16(z80, &z80->sp); break;
 		case 0x18: jrImm(z80); break;
+
+		case 0xC7: rst(z80, 0x00); break;
+		case 0xCF: rst(z80, 0x08); break;
+		case 0xD7: rst(z80, 0x10); break;
+		case 0xDF: rst(z80, 0x18); break;
+		case 0xE7: rst(z80, 0x20); break;
+		case 0xEF: rst(z80, 0x28); break;
+		case 0xF7: rst(z80, 0x30); break;
+		case 0xFF: rst(z80, 0x38); break;
+
 		case 0xF5: push(z80, &z80->af); break;
 		case 0xF3: di(z80); break;
 		case 0xFB: ei(z80); break;
@@ -175,6 +185,17 @@ void jrImm(struct Z80* z80)
 	s8 imm = (s8)z80FetchU8(z80);
 	z80->pc += imm;
 	z80->cycles = 12;
+}
+
+void rst(struct Z80* z80, u8 vector)
+{
+	z80->sp--;
+	z80WriteU8((z80->pc >> 8) & 0xFF, z80->sp);
+	z80->sp--;
+	z80WriteU8((z80->pc & 0xFF), z80->sp);
+
+	z80->pc = vector;
+	z80->cycles = 11;
 }
 
 void push(struct Z80* z80, union Register* reg)
