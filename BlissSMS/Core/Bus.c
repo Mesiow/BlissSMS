@@ -23,6 +23,20 @@ void memoryBusLoadBios(struct Bus* bus, const char *path)
 	fclose(bios);
 }
 
+void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address)
+{
+	if (address >= RAM_SLOT_2_START && address <= RAM_SLOT_2_END) {
+		bus->ramslot2[address & (RAM_MAPPER_2_SIZE - 1)] = value;
+	}
+	else if (address >= SYSRAM_START && address <= SYSRAM_END) {
+		bus->systemRam[address & (SYSRAM_SIZE - 1)] = value;
+	}
+	//Mirrored system ram
+	else if (address >= 0xE000 && address <= 0xFFFF) {
+		bus->systemRam[address & 0xDFFF] = value;
+	}
+}
+
 u8 memoryBusReadU8(struct Bus* bus, u16 address)
 {
 	if (bus->isBiosMapped) {

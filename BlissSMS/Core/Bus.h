@@ -55,4 +55,6 @@ struct Bus {
 
 void memoryBusInit(struct Bus* bus);
 void memoryBusLoadBios(struct Bus* bus, const char *path);
+
+void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address);
 u8 memoryBusReadU8(struct Bus* bus, u16 address);
