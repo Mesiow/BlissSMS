@@ -41,6 +41,11 @@ void z80SetFlagCond(struct Z80* z80, u8 cond, u8 flags)
 	}
 }
 
+void z80WriteU8(u8 value, u16 address)
+{
+	memoryBusWriteU8(memBus, value, address);
+}
+
 u8 z80ReadU8(u16 address)
 {
 	return memoryBusReadU8(memBus, address);
@@ -123,6 +128,9 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 	switch (opcode) {
 		case 0x00: z80->cycles = 4; break;
 		case 0x01: loadReg16(z80, &z80->bc); break;
+		case 0x31: loadReg16(z80, &z80->sp); break;
+		case 0x18: jrImm(z80); break;
+		case 0xF5: push(z80, &z80->af); break;
 		case 0xF3: di(z80); break;
 		case 0xFB: ei(z80); break;
 	}
@@ -143,12 +151,8 @@ void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
-		case 0x46: im(z80, Zero); break;
 		case 0x56: im(z80, One); break;
-		case 0x5E: im(z80, Two); break;
-		case 0x66: im(z80, Zero); break;
 		case 0x76: im(z80, One); break;
-		case 0x7E: im(z80, Two); break;
 	}
 }
 
@@ -162,14 +166,29 @@ void executeIyBitInstruction(struct Z80* z80, u8 opcode)
 
 void loadReg16(struct Z80 *z80, union Register *reg)
 {
-	printf("ld 16\n");
 	reg->value = z80FetchU16(z80);
 	z80->cycles = 10;
 }
 
+void jrImm(struct Z80* z80)
+{
+	s8 imm = (s8)z80FetchU8(z80);
+	z80->pc += imm;
+	z80->cycles = 12;
+}
+
+void push(struct Z80* z80, union Register* reg)
+{
+	z80->sp--;
+	z80WriteU8(z80->af.hi, z80->sp);
+	z80->sp--;
+	z80WriteU8(z80->af.lo, z80->sp);
+
+	z80->cycles = 11;
+}
+
 void di(struct Z80* z80)
 {
-	printf("di\n");
 	z80->interrupts = 0;
 	z80->cycles = 4;
 }
@@ -182,7 +201,6 @@ void ei(struct Z80* z80)
 
 void im(struct Z80* z80, enum IntMode interruptMode)
 {
-	printf("im\n");
 	z80->interrupt_mode = interruptMode;
 	z80->cycles = 8;
 }

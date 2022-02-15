@@ -75,6 +75,8 @@ void executeIyBitInstruction(struct Z80* z80, u8 opcode);
 //immediate 16 bit loads into 16 bit register
 void loadReg16(struct Z80* z80, union Register *reg);
 
+//Branches/Jumps
+void jrImm(struct Z80* z80);
 
 //Interrupt related instructions
 void di(struct Z80* z80);
