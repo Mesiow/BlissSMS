@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 	systemInit(&sms);
 	//systemRunEmulation(&sms);
 
-	for(int i = 0; i < 2; i++)
+	for(int i = 0; i < 4; i++)
 		tickCpu(&sms);
 
 	u8 running = 1;
@@ -33,6 +33,8 @@ int main(int argc, char *argv[]) {
 				case SDL_QUIT: running = 0; break;
 			}
 		}
+
+		//systemRunEmulation(&sms);
 
 		SDL_SetRenderDrawColor(renderer, 22, 100, 135, 255);
 		SDL_RenderClear(renderer);
