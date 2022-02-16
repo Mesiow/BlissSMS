@@ -4,9 +4,11 @@ void systemInit(struct System* sys)
 {
 	memoryBusInit(&sys->bus);
 	memoryBusLoadBios(&sys->bus, "test_roms/bios13fx.sms");
+	ioInit(&sys->io);
 
 	z80Init(&sys->z80);
 	z80ConnectBus(&sys->bus);
+	z80ConnectIo(&sys->io);
 
 	sys->running = 1;
 }

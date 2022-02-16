@@ -1,5 +1,6 @@
 #pragma once
 #include "Bus.h"
+#include "Io.h"
 #include "Z80.h"
 
 #define CYCLES_PER_SCANLINE 3420
@@ -8,6 +9,7 @@
 
 struct System {
 	struct Bus bus;
+	struct Io io;
 	struct Z80 z80;
 	u8 running;
 };

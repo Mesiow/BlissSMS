@@ -27,6 +27,9 @@
     <ClCompile Include="Core\Z80.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Io.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Z80.h">
@@ -39,6 +42,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core\Bus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
