@@ -48,9 +48,11 @@ struct Z80 {
 };
 
 struct Bus* memBus;
+struct Io* ioBus;
 
 void z80Init(struct Z80* z80);
 void z80ConnectBus(struct Bus* bus);
+void z80ConnectIo(struct Io* io);
 void z80SetFlag(struct Z80* z80, u8 flags);
 void z80SetFlagCond(struct Z80* z80, u8 cond, u8 flags);
 
@@ -83,6 +85,10 @@ void rst(struct Z80* z80, u8 vector);
 
 //Stack
 void push(struct Z80* z80, union Register* reg);
+void pop(struct Z80* z80, union Register* reg);
+
+//Io/Ports
+void out(struct Z80* z80, u8 reg);
 
 //Interrupt related instructions
 void di(struct Z80* z80);

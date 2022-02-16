@@ -1,5 +1,6 @@
 #include "Z80.h"
 #include "Bus.h"
+#include "Io.h"
 
 
 void z80Init(struct Z80* z80)
@@ -27,6 +28,11 @@ void z80Init(struct Z80* z80)
 void z80ConnectBus(struct Bus* bus)
 {
 	memBus = bus;
+}
+
+void z80ConnectIo(struct Io* io)
+{
+	ioBus = io;
 }
 
 void z80SetFlag(struct Z80* z80, u8 flags)
@@ -140,7 +146,18 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xF7: rst(z80, 0x30); break;
 		case 0xFF: rst(z80, 0x38); break;
 
+		case 0xD3: out(z80, z80->af.hi); break;
+
+		case 0xC5: push(z80, &z80->bc); break;
+		case 0xD5: push(z80, &z80->de); break;
+		case 0xE5: push(z80, &z80->hl); break;
 		case 0xF5: push(z80, &z80->af); break;
+
+		case 0xC1: pop(z80, &z80->bc); break;
+		case 0xD1: pop(z80, &z80->de); break;
+		case 0xE1: pop(z80, &z80->hl); break;
+		case 0xF1: pop(z80, &z80->af); break;
+
 		case 0xF3: di(z80); break;
 		case 0xFB: ei(z80); break;
 	}
@@ -204,6 +221,24 @@ void push(struct Z80* z80, union Register* reg)
 	z80WriteU8(z80->af.hi, z80->sp);
 	z80->sp--;
 	z80WriteU8(z80->af.lo, z80->sp);
+
+	z80->cycles = 11;
+}
+
+void pop(struct Z80* z80, union Register* reg)
+{
+	reg->lo = z80ReadU8(z80->sp);
+	z80->sp++;
+	reg->hi = z80ReadU8(z80->sp);
+	z80->sp++;
+
+	z80->cycles = 10;
+}
+
+void out(struct Z80* z80, u8 reg)
+{
+	u8 io_port = z80FetchU8(z80);
+	ioWriteU8(ioBus, reg, io_port);
 
 	z80->cycles = 11;
 }
