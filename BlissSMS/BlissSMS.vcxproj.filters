@@ -27,7 +27,7 @@
     <ClCompile Include="Core\Z80.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Io.cpp">
+    <ClCompile Include="Core\Io.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

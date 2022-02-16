@@ -148,7 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core\Bus.c" />
-    <ClCompile Include="Core\Io.cpp" />
+    <ClCompile Include="Core\Io.c" />
     <ClCompile Include="Core\System.c" />
     <ClCompile Include="Core\Z80.c" />
     <ClCompile Include="main.c" />
