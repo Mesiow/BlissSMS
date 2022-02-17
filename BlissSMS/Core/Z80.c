@@ -229,14 +229,14 @@ void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
-		case 0x40: in(z80, z80->bc.lo, &z80->bc.hi); break;
-		case 0x48: in(z80, z80->bc.lo, &z80->bc.lo); break;
-		case 0x50: in(z80, z80->bc.lo, &z80->de.hi); break;
-		case 0x58: in(z80, z80->bc.lo, &z80->de.lo); break;
-		case 0x60: in(z80, z80->bc.lo, &z80->hl.hi); break;
-		case 0x68: in(z80, z80->bc.lo, &z80->hl.lo); break;
-		case 0x70: in(z80, z80->bc.lo, NULL); break;
-		case 0x78: in(z80, z80->bc.lo, &z80->af.hi); break;
+		case 0x40: in(z80, z80->bc.lo, &z80->bc.hi, opcode); break;
+		case 0x48: in(z80, z80->bc.lo, &z80->bc.lo, opcode); break;
+		case 0x50: in(z80, z80->bc.lo, &z80->de.hi, opcode); break;
+		case 0x58: in(z80, z80->bc.lo, &z80->de.lo, opcode); break;
+		case 0x60: in(z80, z80->bc.lo, &z80->hl.hi, opcode); break;
+		case 0x68: in(z80, z80->bc.lo, &z80->hl.lo, opcode); break;
+		case 0x70: in(z80, z80->bc.lo, NULL, opcode); break;
+		case 0x78: in(z80, z80->bc.lo, &z80->af.hi, opcode); break;
 
 		case 0x41: out(z80, z80->bc.lo, z80->bc.hi); break;
 		case 0x49: out(z80, z80->bc.lo, z80->bc.lo); break;
@@ -332,8 +332,15 @@ void outa(struct Z80* z80)
 void ina(struct Z80* z80)
 {
 	u8 io_port = z80FetchU8(z80);
-	u8 io_value = ioReadU8(ioBus, io_port);
-	z80->af.hi = io_value;
+
+	u8 open_bus = ((io_port >= 0x0) && (io_port <= 0x3F));
+	if (open_bus) {
+		z80->af.hi = io_port;
+	}
+	else {
+		u8 io_value = ioReadU8(ioBus, io_port);
+		z80->af.hi = io_value;
+	}
 
 	z80->cycles = 11;
 }
@@ -344,9 +351,14 @@ void out(struct Z80* z80, u8 destPort, u8 sourceReg)
 	z80->cycles = 12;
 }
 
-void in(struct Z80* z80, u8 sourcePort, u8* destReg)
+void in(struct Z80* z80, u8 sourcePort, u8* destReg, u8 opcode)
 {
-	u8 io_value = ioReadU8(ioBus, sourcePort);
+	u8 io_value = 0x0;
+	u8 open_bus = ((sourcePort >= 0x0) && (sourcePort <= 0x3F));
+	if (open_bus) {
+		io_value = opcode;
+	}else
+		io_value = ioReadU8(ioBus, sourcePort);
 
 	if(destReg != NULL)
 		*destReg = io_value;

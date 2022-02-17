@@ -30,6 +30,9 @@
     <ClCompile Include="Core\Io.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Z80.h">
