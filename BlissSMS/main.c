@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <SDL.h>
+#include "SDL.h"
 #include "Core\System.h"
 
 int main(int argc, char *argv[]) {
@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
 		printf("Failed to init SDL, error: %s\n", SDL_GetError());
 		return -1;
 	}
-
+	
 	const int width = 640;
 	const int height = 480;
 
@@ -18,11 +18,9 @@ int main(int argc, char *argv[]) {
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 	
 	struct System sms;
-
 	systemInit(&sms);
-	//systemRunEmulation(&sms);
 
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < 10; i++)
 		tickCpu(&sms);
 
 	u8 running = 1;

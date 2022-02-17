@@ -1,12 +1,13 @@
 #pragma once
 #include "Util.h"
+#include <assert.h>
 
-#define CARRY_FLAG (1 << 0)
-#define SUBTRACT_FLAG (1 << 1)
-#define PARITY_FLAG (1 << 2)
-#define HALF_CARRY_FLAG (1 << 4)
-#define ZERO_FLAG (1 << 6)
-#define SIGN_FLAG (1 << 7)
+#define FLAG_C (1 << 0)
+#define FLAG_N (1 << 1)
+#define FLAG_PV (1 << 2)
+#define FLAG_H (1 << 4)
+#define FLAG_Z (1 << 6)
+#define FLAG_S (1 << 7)
 
 
 union Register{
@@ -55,6 +56,12 @@ void z80ConnectBus(struct Bus* bus);
 void z80ConnectIo(struct Io* io);
 void z80SetFlag(struct Z80* z80, u8 flags);
 void z80SetFlagCond(struct Z80* z80, u8 cond, u8 flags);
+void z80ClearFlag(struct Z80* z80, u8 flags);
+
+u8 z80OverflowFromAdd(u8 op1, u8 op2);
+u8 z80OverflowFromSub(u8 op1, u8 op2);
+u8 z80IsEvenParity(u8 value);
+u8 z80IsSigned(u8 value);
 
 void z80WriteU8(u8 value, u16 address);
 
@@ -88,7 +95,10 @@ void push(struct Z80* z80, union Register* reg);
 void pop(struct Z80* z80, union Register* reg);
 
 //Io/Ports
-void out(struct Z80* z80, u8 reg);
+void outa(struct Z80* z80);
+void ina(struct Z80* z80);
+void out(struct Z80* z80, u8 destPort, u8 sourceReg);
+void in(struct Z80* z80, u8 sourcePort, u8* destReg);
 
 //Interrupt related instructions
 void di(struct Z80* z80);

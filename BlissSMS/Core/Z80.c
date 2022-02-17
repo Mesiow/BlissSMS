@@ -47,6 +47,33 @@ void z80SetFlagCond(struct Z80* z80, u8 cond, u8 flags)
 	}
 }
 
+void z80ClearFlag(struct Z80* z80, u8 flags)
+{
+	z80->af.lo &= ~(flags & 0b1101'0111);
+}
+
+u8 z80OverflowFromAdd(u8 op1, u8 op2)
+{
+	return 0;
+}
+
+u8 z80OverflowFromSub(u8 op1, u8 op2)
+{
+	return 0;
+}
+
+u8 z80IsEvenParity(u8 value)
+{
+	u8 count = popcount(value);
+	return ((count % 2) == 0);
+}
+
+u8 z80IsSigned(u8 value)
+{
+	s8 signed_value = (s8)value;
+	return (((signed_value >> 7) & 0x1) == 0x1);
+}
+
 void z80WriteU8(u8 value, u16 address)
 {
 	memoryBusWriteU8(memBus, value, address);
@@ -146,7 +173,8 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xF7: rst(z80, 0x30); break;
 		case 0xFF: rst(z80, 0x38); break;
 
-		case 0xD3: out(z80, z80->af.hi); break;
+		case 0xD3: outa(z80); break;
+		case 0xDB: ina(z80); break;
 
 		case 0xC5: push(z80, &z80->bc); break;
 		case 0xD5: push(z80, &z80->de); break;
@@ -160,35 +188,93 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 
 		case 0xF3: di(z80); break;
 		case 0xFB: ei(z80); break;
+
+		default:
+			printf("--Unimplemented Main Instruction--: 0x%02X\n", opcode);
+			assert(0);
+			break;
 	}
 }
 
 void executeBitInstruction(struct Z80* z80, u8 opcode)
 {
+	switch (opcode) {
+		default:
+			printf("--Unimplemented Bit Instruction--: 0x%02X\n", opcode);
+			assert(0);
+			break;
+	}
 }
 
 void executeIxInstruction(struct Z80* z80, u8 opcode)
 {
+	switch (opcode) {
+	default:
+		printf("--Unimplemented Ix Instruction--: 0x%02X\n", opcode);
+		assert(0);
+		break;
+	}
 }
 
 void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 {
+	switch (opcode) {
+	default:
+		printf("--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
+		assert(0);
+		break;
+	}
 }
 
 void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		case 0x40: in(z80, z80->bc.lo, &z80->bc.hi); break;
+		case 0x48: in(z80, z80->bc.lo, &z80->bc.lo); break;
+		case 0x50: in(z80, z80->bc.lo, &z80->de.hi); break;
+		case 0x58: in(z80, z80->bc.lo, &z80->de.lo); break;
+		case 0x60: in(z80, z80->bc.lo, &z80->hl.hi); break;
+		case 0x68: in(z80, z80->bc.lo, &z80->hl.lo); break;
+		case 0x70: in(z80, z80->bc.lo, NULL); break;
+		case 0x78: in(z80, z80->bc.lo, &z80->af.hi); break;
+
+		case 0x41: out(z80, z80->bc.lo, z80->bc.hi); break;
+		case 0x49: out(z80, z80->bc.lo, z80->bc.lo); break;
+		case 0x51: out(z80, z80->bc.lo, z80->de.hi); break;
+		case 0x59: out(z80, z80->bc.lo, z80->de.lo); break;
+		case 0x61: out(z80, z80->bc.lo, z80->hl.hi); break;
+		case 0x69: out(z80, z80->bc.lo, z80->hl.lo); break;
+		case 0x71: out(z80, z80->bc.lo, 0); break;
+		case 0x79: out(z80, z80->bc.lo, z80->af.hi); break;
+
 		case 0x56: im(z80, One); break;
 		case 0x76: im(z80, One); break;
+
+		default:
+			printf("--Unimplemented Extended Instruction--: 0x%02X\n", opcode);
+			assert(0);
+			break;
 	}
 }
 
 void executeIyInstruction(struct Z80* z80, u8 opcode)
 {
+	switch (opcode) {
+	default:
+		printf("--Unimplemented Iy Instruction--: 0x%02X\n", opcode);
+		assert(0);
+		break;
+	}
 }
 
 void executeIyBitInstruction(struct Z80* z80, u8 opcode)
 {
+	switch (opcode) {
+	default:
+		printf("--Unimplemented Iy Bit Instruction--: 0x%02X\n", opcode);
+		assert(0);
+		break;
+	}
 }
 
 void loadReg16(struct Z80 *z80, union Register *reg)
@@ -235,12 +321,43 @@ void pop(struct Z80* z80, union Register* reg)
 	z80->cycles = 10;
 }
 
-void out(struct Z80* z80, u8 reg)
+void outa(struct Z80* z80)
 {
 	u8 io_port = z80FetchU8(z80);
-	ioWriteU8(ioBus, reg, io_port);
+	ioWriteU8(ioBus, z80->af.hi, io_port);
 
 	z80->cycles = 11;
+}
+
+void ina(struct Z80* z80)
+{
+	u8 io_port = z80FetchU8(z80);
+	u8 io_value = ioReadU8(ioBus, io_port);
+	z80->af.hi = io_value;
+
+	z80->cycles = 11;
+}
+
+void out(struct Z80* z80, u8 destPort, u8 sourceReg)
+{
+	ioWriteU8(ioBus, destPort, sourceReg);
+	z80->cycles = 12;
+}
+
+void in(struct Z80* z80, u8 sourcePort, u8* destReg)
+{
+	u8 io_value = ioReadU8(ioBus, sourcePort);
+
+	if(destReg != NULL)
+		*destReg = io_value;
+
+	z80ClearFlag(z80, (FLAG_H | FLAG_N));
+
+	(io_value == 0x0) ? z80SetFlag(z80, FLAG_Z) : z80ClearFlag(z80, FLAG_Z);
+	(z80IsEvenParity(io_value)) ? z80SetFlag(z80, FLAG_PV) : z80ClearFlag(z80, FLAG_PV);
+    (z80IsSigned(io_value)) ? z80SetFlag(z80, FLAG_S) : z80ClearFlag(z80, FLAG_S);
+
+	z80->cycles = 12;
 }
 
 void di(struct Z80* z80)
