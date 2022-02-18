@@ -56,6 +56,12 @@ void z80ClearFlag(struct Z80* z80, u8 flags)
 	z80->af.lo &= ~(flags & 0b1101'0111);
 }
 
+u8 getFlag(struct Z80* z80, u8 flag)
+{
+	u8 mask = (z80->af.lo & flag);
+	return (mask ? 1 : 0);
+}
+
 void z80HandleInterrupts(struct Z80* z80)
 {
 	//Maskable interrupts enabled
@@ -194,9 +200,38 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x2E: loadReg8(z80, &z80->hl.lo); break;
 		case 0x36: loadHL8(z80); break;
 
-		case 0x18: jrImm(z80); break;
+		case 0x78: loadAReg(z80, z80->bc.hi); break;
+		case 0x79: loadAReg(z80, z80->bc.lo); break;
+		case 0x7A: loadAReg(z80, z80->de.hi); break;
+		case 0x7B: loadAReg(z80, z80->de.lo); break;
+		case 0x7C: loadAReg(z80, z80->hl.hi); break;
+		case 0x7D: loadAReg(z80, z80->hl.lo); break;
 
-		case 0xAF: xor (z80, &z80->af.hi); break;
+		case 0x46: loadRegHL(z80, &z80->bc.hi); break;
+		case 0x4E: loadRegHL(z80, &z80->bc.lo); break;
+		case 0x56: loadRegHL(z80, &z80->de.hi); break;
+		case 0x5E: loadRegHL(z80, &z80->de.lo); break;
+		case 0x66: loadRegHL(z80, &z80->hl.hi); break;
+		case 0x6E: loadRegHL(z80, &z80->hl.lo); break;
+		case 0x7E: loadRegHL(z80, &z80->af.hi); break;
+
+		case 0x0B: dec16(z80, &z80->bc); break;
+		case 0x1B: dec16(z80, &z80->de); break;
+		case 0x2B: dec16(z80, &z80->hl); break;
+		case 0x3B: dec16(z80, &z80->sp); break;
+
+		case 0x10: djnz(z80); break;
+		case 0x18: jrImm(z80); break;
+		case 0x20: jrImmCond(z80, getFlag(z80, FLAG_Z) == 0); break;
+
+		case 0xAF: xor(z80, z80->af.hi); break;
+		case 0xAD: xor(z80, z80->hl.lo); break;
+		case 0xB0: or(z80, z80->bc.hi); break;
+		case 0xB1: or(z80, z80->bc.lo); break;
+		case 0xB2: or(z80, z80->de.hi); break;
+		case 0xB3: or(z80, z80->de.lo); break;
+		case 0xB4: or(z80, z80->hl.hi); break;
+		case 0xB5: or(z80, z80->hl.lo); break;
 
 		case 0xCD: call(z80); break;
 
@@ -342,11 +377,58 @@ void loadHL8(struct Z80* z80)
 	z80->cycles = 10;
 }
 
+void loadAReg(struct Z80* z80, u8 reg)
+{
+	z80->af.hi = reg;
+	z80->cycles = 4;
+}
+
+void loadRegHL(struct Z80* z80, u8* reg)
+{
+	*reg = z80ReadU8(z80->hl.value);
+	z80->cycles = 7;
+}
+
+void dec16(struct Z80* z80, union Register* reg)
+{
+	reg->value--;
+	z80->cycles = 6;
+}
+
+void dec8(struct Z80* z80, u8* reg)
+{
+
+}
+
 void jrImm(struct Z80* z80)
 {
 	s8 imm = (s8)z80FetchU8(z80);
 	z80->pc += imm;
 	z80->cycles = 12;
+}
+
+void jrImmCond(struct Z80* z80, u8 cond)
+{
+	if (cond) {
+		jrImm(z80);
+	}
+	else {
+		z80->pc += 1;
+		z80->cycles = 7;
+	}
+}
+
+void djnz(struct Z80* z80)
+{
+	z80->bc.hi--;
+	if (z80->bc.hi != 0) {
+		jrImm(z80);
+		z80->cycles += 1;
+	}
+	else {
+		z80->pc += 1;
+		z80->cycles = 8;
+	}
 }
 
 void rst(struct Z80* z80, u8 vector)
@@ -376,7 +458,6 @@ void callCond(struct Z80* z80, u8 cond)
 {
 	if (cond){
 		call(z80);
-		z80->cycles = 17;
 	}
 	else {
 		z80->pc += 2;
@@ -384,10 +465,23 @@ void callCond(struct Z80* z80, u8 cond)
 	}
 }
 
-void xor(struct Z80* z80, u8* reg)
+void xor(struct Z80* z80, u8 reg)
 {
-	u8 result = z80->af.hi ^ *reg;
-	*reg = z80->af.hi ^ *reg;
+	u8 result = z80->af.hi ^ reg;
+	z80->af.hi ^= reg;
+
+	z80AffectFlag(z80, (result == 0), FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(result), FLAG_PV);
+	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+
+	z80ClearFlag(z80, (FLAG_C | FLAG_N | FLAG_H));
+	z80->cycles = 4;
+}
+
+void or(struct Z80 * z80, u8 reg)
+{
+	u8 result = z80->af.hi | reg;
+	z80->af.hi |= reg;
 
 	z80AffectFlag(z80, (result == 0), FLAG_Z);
 	z80AffectFlag(z80, z80IsEvenParity(result), FLAG_PV);

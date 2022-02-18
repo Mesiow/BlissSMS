@@ -61,6 +61,7 @@ void z80ConnectIo(struct Io* io);
 void z80AffectFlag(struct Z80* z80, u8 cond, u8 flags);
 void z80SetFlag(struct Z80* z80, u8 flags);
 void z80ClearFlag(struct Z80* z80, u8 flags);
+u8 getFlag(struct Z80* z80, u8 flag);
 
 void z80HandleInterrupts(struct Z80* z80);
 void z80HandleNonMaskableInterrupt(struct Z80* z80);
@@ -90,19 +91,28 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode);
 void executeIyInstruction(struct Z80* z80, u8 opcode);
 void executeIyBitInstruction(struct Z80* z80, u8 opcode);
 
-//immediate 16 bit loads into 16 bit register
+//Loads
 void loadReg16(struct Z80* z80, union Register *reg);
 void loadReg8(struct Z80* z80, u8 *reg);
 void loadHL8(struct Z80* z80);
+void loadAReg(struct Z80* z80, u8 reg);
+void loadRegHL(struct Z80* z80, u8* reg);
+
+//Arithmetic
+void dec16(struct Z80* z80, union Register* reg);
+void dec8(struct Z80* z80, u8* reg);
 
 //Branches/Jumps/Returns
 void jrImm(struct Z80* z80);
+void jrImmCond(struct Z80* z80, u8 cond);
+void djnz(struct Z80* z80);
 void rst(struct Z80* z80, u8 vector);
 void call(struct Z80* z80);
 void callCond(struct Z80* z80, u8 cond);
 
 //Logical
-void xor(struct Z80* z80, u8* reg);
+void xor(struct Z80* z80, u8 reg);
+void or(struct Z80* z80, u8 reg);
 
 //Stack
 void push(struct Z80* z80, union Register* reg);
