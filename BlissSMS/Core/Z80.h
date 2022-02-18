@@ -109,6 +109,8 @@ void djnz(struct Z80* z80);
 void rst(struct Z80* z80, u8 vector);
 void call(struct Z80* z80);
 void callCond(struct Z80* z80, u8 cond);
+void ret(struct Z80* z80);
+void retCond(struct Z80* z80, u8 cond);
 
 //Logical
 void xor(struct Z80* z80, u8 reg);

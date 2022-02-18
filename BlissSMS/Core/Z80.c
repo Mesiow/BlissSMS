@@ -235,6 +235,8 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 
 		case 0xCD: call(z80); break;
 
+		case 0xC9: ret(z80); break;
+
 		case 0xC7: rst(z80, 0x00); break;
 		case 0xCF: rst(z80, 0x08); break;
 		case 0xD7: rst(z80, 0x10); break;
@@ -462,6 +464,29 @@ void callCond(struct Z80* z80, u8 cond)
 	else {
 		z80->pc += 2;
 		z80->cycles = 10;
+	}
+}
+
+void ret(struct Z80* z80)
+{
+	u8 lo = z80ReadU8(z80->sp);
+	z80->sp++;
+	u8 hi = z80ReadU8(z80->sp);
+	z80->sp++;
+
+	u16 return_address = ((hi << 8) | lo);
+	z80->pc = return_address;
+	z80->cycles = 10;
+}
+
+void retCond(struct Z80* z80, u8 cond)
+{
+	if (cond) {
+		ret(z80);
+		z80->cycles += 1;
+	}
+	else {
+		z80->cycles = 5;
 	}
 }
 
