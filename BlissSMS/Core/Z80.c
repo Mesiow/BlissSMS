@@ -192,8 +192,13 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x1E: loadReg8(z80, &z80->de.lo); break;
 		case 0x26: loadReg8(z80, &z80->hl.hi); break;
 		case 0x2E: loadReg8(z80, &z80->hl.lo); break;
+		case 0x36: loadHL8(z80); break;
 
 		case 0x18: jrImm(z80); break;
+
+		case 0xAF: xor (z80, &z80->af.hi); break;
+
+		case 0xCD: call(z80); break;
 
 		case 0xC7: rst(z80, 0x00); break;
 		case 0xCF: rst(z80, 0x08); break;
@@ -222,6 +227,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 
 		default:
 			printf("--Unimplemented Main Instruction--: 0x%02X\n", opcode);
+			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
 			break;
 	}
@@ -232,6 +238,7 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 	switch (opcode) {
 		default:
 			printf("--Unimplemented Bit Instruction--: 0x%02X\n", opcode);
+			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
 			break;
 	}
@@ -242,6 +249,7 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 	switch (opcode) {
 	default:
 		printf("--Unimplemented Ix Instruction--: 0x%02X\n", opcode);
+		printf("PC: 0x%04X\n", z80->pc);
 		assert(0);
 		break;
 	}
@@ -252,6 +260,7 @@ void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 	switch (opcode) {
 	default:
 		printf("--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
+		printf("PC: 0x%04X\n", z80->pc);
 		assert(0);
 		break;
 	}
@@ -281,10 +290,12 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0x56: im(z80, One); break;
 		case 0x76: im(z80, One); break;
 
+		case 0xB0: ldir(z80); break;
 		case 0xB3: otir(z80); break;
 
 		default:
 			printf("--Unimplemented Extended Instruction--: 0x%02X\n", opcode);
+			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
 			break;
 	}
@@ -295,6 +306,7 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 	switch (opcode) {
 	default:
 		printf("--Unimplemented Iy Instruction--: 0x%02X\n", opcode);
+		printf("PC: 0x%04X\n", z80->pc);
 		assert(0);
 		break;
 	}
@@ -305,6 +317,7 @@ void executeIyBitInstruction(struct Z80* z80, u8 opcode)
 	switch (opcode) {
 	default:
 		printf("--Unimplemented Iy Bit Instruction--: 0x%02X\n", opcode);
+		printf("PC: 0x%04X\n", z80->pc);
 		assert(0);
 		break;
 	}
@@ -320,6 +333,13 @@ void loadReg8(struct Z80* z80, u8 *reg)
 {
 	*reg = z80FetchU8(z80);
 	z80->cycles = 7;
+}
+
+void loadHL8(struct Z80* z80)
+{
+	u8 value = z80FetchU8(z80);
+	z80WriteU8(value, z80->hl.value);
+	z80->cycles = 10;
 }
 
 void jrImm(struct Z80* z80)
@@ -338,6 +358,30 @@ void rst(struct Z80* z80, u8 vector)
 
 	z80->pc = vector;
 	z80->cycles = 11;
+}
+
+void call(struct Z80* z80)
+{
+	u16 address = z80FetchU16(z80);
+	z80->sp--;
+	z80WriteU8((z80->pc >> 8) & 0xFF, z80->sp);
+	z80->sp--;
+	z80WriteU8((z80->pc & 0xFF), z80->sp);
+
+	z80->pc = address;
+	z80->cycles = 17;
+}
+
+void callCond(struct Z80* z80, u8 cond)
+{
+	if (cond){
+		call(z80);
+		z80->cycles = 17;
+	}
+	else {
+		z80->pc += 2;
+		z80->cycles = 10;
+	}
 }
 
 void xor(struct Z80* z80, u8* reg)
@@ -428,7 +472,7 @@ void otir(struct Z80* z80)
 	z80->cycles = ((z80->bc.hi != 0) ? 21 : 16);
 	
 	if (z80->bc.hi != 0) {
-		//byte from address hl written to port c
+		//Byte from address hl written to port c
 		u8 value = z80ReadU8(z80->hl.value);
 		u8 io_port = z80->bc.lo;
 		ioWriteU8(ioBus, value, io_port);
@@ -442,8 +486,27 @@ void otir(struct Z80* z80)
 		if (z80->bc.hi != 0)
 			z80->pc -= 2;
 	}
-
 	z80SetFlag(z80, (FLAG_Z | FLAG_N));
+}
+
+void ldir(struct Z80* z80)
+{
+	z80->cycles = ((z80->bc.value != 0) ? 21 : 16);
+
+	if (z80->bc.value != 0) {
+		//Transfers bytes from source address hl to destination 
+		//address de, bc times
+		u8 value = z80ReadU8(z80->hl.value);
+		z80WriteU8(value, z80->de.value);
+
+		z80->hl.value++;
+		z80->de.value++;
+		z80->bc.value--;
+
+		if (z80->bc.value != 0)
+			z80->pc -= 2;
+	}
+	z80ClearFlag(z80, (FLAG_N | FLAG_PV | FLAG_H));
 }
 
 void di(struct Z80* z80)

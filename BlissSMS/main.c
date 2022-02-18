@@ -29,8 +29,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		//systemRunEmulation(&sms);
-		tickCpu(&sms);
+		systemRunEmulation(&sms);
 
 		SDL_SetRenderDrawColor(renderer, 22, 100, 135, 255);
 		SDL_RenderClear(renderer);

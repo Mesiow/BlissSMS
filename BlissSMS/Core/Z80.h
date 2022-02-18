@@ -93,10 +93,13 @@ void executeIyBitInstruction(struct Z80* z80, u8 opcode);
 //immediate 16 bit loads into 16 bit register
 void loadReg16(struct Z80* z80, union Register *reg);
 void loadReg8(struct Z80* z80, u8 *reg);
+void loadHL8(struct Z80* z80);
 
 //Branches/Jumps/Returns
 void jrImm(struct Z80* z80);
 void rst(struct Z80* z80, u8 vector);
+void call(struct Z80* z80);
+void callCond(struct Z80* z80, u8 cond);
 
 //Logical
 void xor(struct Z80* z80, u8* reg);
@@ -112,6 +115,7 @@ void out(struct Z80* z80, u8 destPort, u8 sourceReg);
 void in(struct Z80* z80, u8 sourcePort, u8* destReg, u8 opcode);
 
 void otir(struct Z80* z80);
+void ldir(struct Z80* z80);
 
 //Interrupt related instructions
 void di(struct Z80* z80);

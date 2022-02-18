@@ -22,7 +22,7 @@ void systemRunEmulation(struct System* sys)
 
 			//vdp.update(cycles);
 			//psg.update(cycles);
-			//z80HandleInterrupts(&sys->z80)
+			//z80HandleInterrupts(&sys->z80);
 
 			cycles_this_frame += cycles;
 		}
