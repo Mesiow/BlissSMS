@@ -20,9 +20,6 @@ int main(int argc, char *argv[]) {
 	struct System sms;
 	systemInit(&sms);
 
-	for(int i = 0; i < 10; i++)
-		tickCpu(&sms);
-
 	u8 running = 1;
 	while (running) {
 		SDL_Event ev;
@@ -33,6 +30,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		//systemRunEmulation(&sms);
+		tickCpu(&sms);
 
 		SDL_SetRenderDrawColor(renderer, 22, 100, 135, 255);
 		SDL_RenderClear(renderer);

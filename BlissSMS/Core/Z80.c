@@ -22,7 +22,8 @@ void z80Init(struct Z80* z80)
 
 	z80->interrupt_mode = Zero;
 	z80->cycles = 0;
-	z80->interrupts = 0;
+	z80->iff1 = 0;
+	z80->iff2 = 0;
 }
 
 void z80ConnectBus(struct Bus* bus)
@@ -35,21 +36,40 @@ void z80ConnectIo(struct Io* io)
 	ioBus = io;
 }
 
-void z80SetFlag(struct Z80* z80, u8 flags)
-{
-	z80->af.lo |= (flags & 0b1101'0111); //just mask out the copy bits they're useless
-}
-
-void z80SetFlagCond(struct Z80* z80, u8 cond, u8 flags)
+void z80AffectFlag(struct Z80* z80, u8 cond, u8 flags)
 {
 	if (cond) {
 		z80->af.lo |= (flags & 0b1101'0111);
 	}
+	else {
+		z80->af.lo &= ~(flags & 0b1101'0111);
+	}
+}
+
+void z80SetFlag(struct Z80* z80, u8 flags)
+{
+	z80->af.lo |= (flags & 0b1101'0111);
 }
 
 void z80ClearFlag(struct Z80* z80, u8 flags)
 {
 	z80->af.lo &= ~(flags & 0b1101'0111);
+}
+
+void z80HandleInterrupts(struct Z80* z80)
+{
+	//Maskable interrupts enabled
+	if (z80->iff1 & z80->iff2) {
+		//interrupts reset
+		z80->iff1 = z80->iff2 = 0;
+	}
+}
+
+void z80HandleNonMaskableInterrupt(struct Z80* z80)
+{
+	z80->iff2 = z80->iff1;
+	z80->iff1 = 0;
+	z80->pc = NMI_VECTOR;
 }
 
 u8 z80OverflowFromAdd(u8 op1, u8 op2)
@@ -160,8 +180,19 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
 		case 0x00: z80->cycles = 4; break;
+
 		case 0x01: loadReg16(z80, &z80->bc); break;
+		case 0x11: loadReg16(z80, &z80->de); break;
+		case 0x21: loadReg16(z80, &z80->hl); break;
 		case 0x31: loadReg16(z80, &z80->sp); break;
+
+		case 0x06: loadReg8(z80, &z80->bc.hi); break;
+		case 0x0E: loadReg8(z80, &z80->bc.lo); break;
+		case 0x16: loadReg8(z80, &z80->de.hi); break;
+		case 0x1E: loadReg8(z80, &z80->de.lo); break;
+		case 0x26: loadReg8(z80, &z80->hl.hi); break;
+		case 0x2E: loadReg8(z80, &z80->hl.lo); break;
+
 		case 0x18: jrImm(z80); break;
 
 		case 0xC7: rst(z80, 0x00); break;
@@ -250,6 +281,8 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0x56: im(z80, One); break;
 		case 0x76: im(z80, One); break;
 
+		case 0xB3: otir(z80); break;
+
 		default:
 			printf("--Unimplemented Extended Instruction--: 0x%02X\n", opcode);
 			assert(0);
@@ -283,6 +316,12 @@ void loadReg16(struct Z80 *z80, union Register *reg)
 	z80->cycles = 10;
 }
 
+void loadReg8(struct Z80* z80, u8 *reg)
+{
+	*reg = z80FetchU8(z80);
+	z80->cycles = 7;
+}
+
 void jrImm(struct Z80* z80)
 {
 	s8 imm = (s8)z80FetchU8(z80);
@@ -299,6 +338,19 @@ void rst(struct Z80* z80, u8 vector)
 
 	z80->pc = vector;
 	z80->cycles = 11;
+}
+
+void xor(struct Z80* z80, u8* reg)
+{
+	u8 result = z80->af.hi ^ *reg;
+	*reg = z80->af.hi ^ *reg;
+
+	z80AffectFlag(z80, (result == 0), FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(result), FLAG_PV);
+	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+
+	z80ClearFlag(z80, (FLAG_C | FLAG_N | FLAG_H));
+	z80->cycles = 4;
 }
 
 void push(struct Z80* z80, union Register* reg)
@@ -363,24 +415,48 @@ void in(struct Z80* z80, u8 sourcePort, u8* destReg, u8 opcode)
 	if(destReg != NULL)
 		*destReg = io_value;
 
+	z80AffectFlag(z80, (io_value == 0), FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(io_value), FLAG_PV);
+	z80AffectFlag(z80, z80IsSigned(io_value), FLAG_S);
+
 	z80ClearFlag(z80, (FLAG_H | FLAG_N));
-
-	(io_value == 0x0) ? z80SetFlag(z80, FLAG_Z) : z80ClearFlag(z80, FLAG_Z);
-	(z80IsEvenParity(io_value)) ? z80SetFlag(z80, FLAG_PV) : z80ClearFlag(z80, FLAG_PV);
-    (z80IsSigned(io_value)) ? z80SetFlag(z80, FLAG_S) : z80ClearFlag(z80, FLAG_S);
-
 	z80->cycles = 12;
+}
+
+void otir(struct Z80* z80)
+{
+	z80->cycles = ((z80->bc.hi != 0) ? 21 : 16);
+	
+	if (z80->bc.hi != 0) {
+		//byte from address hl written to port c
+		u8 value = z80ReadU8(z80->hl.value);
+		u8 io_port = z80->bc.lo;
+		ioWriteU8(ioBus, value, io_port);
+
+		z80->hl.value++;
+		z80->bc.hi--;
+
+		//If byte counter (B) is not 0, pc is decremented by 2 and the instruction
+		//will be repeated (also interrupts will be checked and possibly triggered
+		//until the instructions terminates once B becomes 0
+		if (z80->bc.hi != 0)
+			z80->pc -= 2;
+	}
+
+	z80SetFlag(z80, (FLAG_Z | FLAG_N));
 }
 
 void di(struct Z80* z80)
 {
-	z80->interrupts = 0;
+	z80->iff1 = 1;
+	z80->iff2 = 1;
 	z80->cycles = 4;
 }
 
 void ei(struct Z80* z80)
 {
-	z80->interrupts = 1;
+	z80->iff1 = 0;
+	z80->iff2 = 0;
 	z80->cycles = 4;
 }
 

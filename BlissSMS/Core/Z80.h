@@ -9,6 +9,9 @@
 #define FLAG_Z (1 << 6)
 #define FLAG_S (1 << 7)
 
+#define NMI_VECTOR 0x66
+#define INT_VECTOR 0x38
+
 
 union Register{
 	struct {
@@ -45,7 +48,8 @@ struct Z80 {
 
 	enum IntMode interrupt_mode;
 	u16 cycles;
-	u8 interrupts;
+	u8 iff1;
+	u8 iff2;
 };
 
 struct Bus* memBus;
@@ -54,9 +58,12 @@ struct Io* ioBus;
 void z80Init(struct Z80* z80);
 void z80ConnectBus(struct Bus* bus);
 void z80ConnectIo(struct Io* io);
+void z80AffectFlag(struct Z80* z80, u8 cond, u8 flags);
 void z80SetFlag(struct Z80* z80, u8 flags);
-void z80SetFlagCond(struct Z80* z80, u8 cond, u8 flags);
 void z80ClearFlag(struct Z80* z80, u8 flags);
+
+void z80HandleInterrupts(struct Z80* z80);
+void z80HandleNonMaskableInterrupt(struct Z80* z80);
 
 u8 z80OverflowFromAdd(u8 op1, u8 op2);
 u8 z80OverflowFromSub(u8 op1, u8 op2);
@@ -85,10 +92,14 @@ void executeIyBitInstruction(struct Z80* z80, u8 opcode);
 
 //immediate 16 bit loads into 16 bit register
 void loadReg16(struct Z80* z80, union Register *reg);
+void loadReg8(struct Z80* z80, u8 *reg);
 
 //Branches/Jumps/Returns
 void jrImm(struct Z80* z80);
 void rst(struct Z80* z80, u8 vector);
+
+//Logical
+void xor(struct Z80* z80, u8* reg);
 
 //Stack
 void push(struct Z80* z80, union Register* reg);
@@ -99,6 +110,8 @@ void outa(struct Z80* z80);
 void ina(struct Z80* z80);
 void out(struct Z80* z80, u8 destPort, u8 sourceReg);
 void in(struct Z80* z80, u8 sourcePort, u8* destReg, u8 opcode);
+
+void otir(struct Z80* z80);
 
 //Interrupt related instructions
 void di(struct Z80* z80);
