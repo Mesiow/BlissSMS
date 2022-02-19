@@ -206,15 +206,20 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x21: loadReg16(z80, &z80->hl); break;
 		case 0x31: loadReg16(z80, &z80->sp); break;
 
+		//Misc
+		case 0x2F: cpl(z80); break;
+		case 0x76: halt(z80); break;
+
 		//Shifts
 		case 0x07: rlca(z80); break;
+		case 0x0F: rrca(z80); break;
 
 		//Exchanges
 		case 0x08: ex(z80, &z80->af, &z80->shadowedregs.af); break;
 		case 0xEB: ex(z80, &z80->de, &z80->hl); break;
 		case 0xD9: exx(z80); break;
 
-		//Load register into mem location pointed to by immediate u16
+		//Loads
 		case 0x22: loadMemReg16(z80, &z80->hl); break;
 		case 0x32: loadMemReg8(z80, z80->af.hi); break;
 
@@ -229,6 +234,8 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 
 		case 0x2A: load16Reg(z80, &z80->hl); break;
 		case 0x3A: load16A(z80); break;
+
+		case 0x4F: loadReg(z80, &z80->bc.lo, z80->af.hi); break;
 
 		case 0x78: loadAReg(z80, z80->bc.hi); break;
 		case 0x79: loadAReg(z80, z80->bc.lo); break;
@@ -245,29 +252,57 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x6E: loadRegHL(z80, &z80->hl.lo); break;
 		case 0x7E: loadRegHL(z80, &z80->af.hi); break;
 
+		case 0x70: loadHlReg(z80, z80->bc.hi); break;
+		case 0x71: loadHlReg(z80, z80->bc.lo); break;
+		case 0x72: loadHlReg(z80, z80->de.hi); break;
+		case 0x73: loadHlReg(z80, z80->de.lo); break;
+		case 0x74: loadHlReg(z80, z80->hl.hi); break;
+		case 0x75: loadHlReg(z80, z80->hl.lo); break;
 		case 0x77: loadHlReg(z80, z80->af.hi); break;
 
-		case 0x0B: dec16(z80, &z80->bc); break;
-		case 0x1B: dec16(z80, &z80->de); break;
-		case 0x2B: dec16(z80, &z80->hl); break;
-		case 0x3B: dec16(z80, &z80->sp); break;
+		//Arithmetic
+		case 0x23: incReg16(z80, &z80->hl); break;
+		case 0x0B: decReg16(z80, &z80->bc); break;
+		case 0x1B: decReg16(z80, &z80->de); break;
+		case 0x2B: decReg16(z80, &z80->hl); break;
+		case 0x3B: decReg16(z80, &z80->sp); break;
 
+		//Jumps/Branches/Rets
 		case 0x10: djnz(z80); break;
 		case 0x18: jrImm(z80); break;
 		case 0x20: jrImmCond(z80, getFlag(z80, FLAG_Z) == 0); break;
 		case 0x28: jrImmCond(z80, getFlag(z80, FLAG_Z)); break;
 
-		case 0xAF: xor(z80, z80->af.hi); break;
+		case 0xA0: and(z80, z80->bc.hi); break;
+		case 0xA1: and(z80, z80->bc.lo); break;
+		case 0xA2: and(z80, z80->de.hi); break;
+		case 0xA3: and(z80, z80->de.lo); break;
+		case 0xA4: and(z80, z80->hl.hi); break;
+		case 0xA5: and(z80, z80->hl.lo); break;
+		case 0xA6: andMemHl(z80); break;
+		case 0xA7: and(z80, z80->af.hi); break;
+
+		case 0xA8: xor(z80, z80->bc.hi); break;
+		case 0xA9: xor(z80, z80->bc.lo); break;
+		case 0xAA: xor(z80, z80->de.hi); break;
+		case 0xAB: xor(z80, z80->de.lo); break;
+		case 0xAC: xor(z80, z80->hl.hi); break;
 		case 0xAD: xor(z80, z80->hl.lo); break;
+		case 0xAE: xorMemHl(z80); break;
+		case 0xAF: xor(z80, z80->af.hi); break;
+
 		case 0xB0: or(z80, z80->bc.hi); break;
 		case 0xB1: or(z80, z80->bc.lo); break;
 		case 0xB2: or(z80, z80->de.hi); break;
 		case 0xB3: or(z80, z80->de.lo); break;
 		case 0xB4: or(z80, z80->hl.hi); break;
 		case 0xB5: or(z80, z80->hl.lo); break;
+		case 0xB6: orMemHl(z80); break;
 		case 0xB7: or(z80, z80->af.hi); break;
 
+
 		case 0xCD: call(z80); break;
+		case 0xDC: callCond(z80, getFlag(z80, FLAG_C)); break;
 		case 0xC9: ret(z80); break;
 		case 0xC3: jp(z80); break;
 		case 0xD2: jpCond(z80, getFlag(z80, FLAG_C) == 0); break;
@@ -472,13 +507,25 @@ void load16A(struct Z80* z80)
 	z80->cycles = 13;
 }
 
-void dec16(struct Z80* z80, union Register* reg)
+void loadReg(struct Z80* z80, u8* destReg, u8 sourceReg)
+{
+	*destReg = sourceReg;
+	z80->cycles = 4;
+}
+
+void incReg16(struct Z80* z80, union Register* reg)
+{
+	reg->value++;
+	z80->cycles = 6;
+}
+
+void decReg16(struct Z80* z80, union Register* reg)
 {
 	reg->value--;
 	z80->cycles = 6;
 }
 
-void dec8(struct Z80* z80, u8* reg)
+void decReg8(struct Z80* z80, u8* reg)
 {
 
 }
@@ -600,6 +647,14 @@ void xor(struct Z80* z80, u8 reg)
 	z80->cycles = 4;
 }
 
+void xorMemHl(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80->hl.value);
+	xor(z80, value);
+
+	z80->cycles += 3;
+}
+
 void or(struct Z80 * z80, u8 reg)
 {
 	u8 result = z80->af.hi | reg;
@@ -611,6 +666,36 @@ void or(struct Z80 * z80, u8 reg)
 
 	z80ClearFlag(z80, (FLAG_C | FLAG_N | FLAG_H));
 	z80->cycles = 4;
+}
+
+void orMemHl(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80->hl.value);
+	or(z80, value);
+
+	z80->cycles += 3;
+}
+
+void and(struct Z80* z80, u8 reg)
+{
+	u8 result = z80->af.hi & reg;
+	z80->af.hi &= reg;
+
+	z80AffectFlag(z80, (result == 0), FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(result), FLAG_PV);
+	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+
+	z80SetFlag(z80, FLAG_H);
+	z80ClearFlag(z80, (FLAG_C | FLAG_N));
+	z80->cycles = 4;
+}
+
+void andMemHl(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80->hl.value);
+	and(z80, value);
+
+	z80->cycles += 3;
 }
 
 void rlca(struct Z80* z80)
@@ -791,6 +876,19 @@ void ldir(struct Z80* z80)
 			z80->pc -= 2;
 	}
 	z80ClearFlag(z80, (FLAG_N | FLAG_PV | FLAG_H));
+}
+
+void cpl(struct Z80* z80)
+{
+	z80->af.hi = ~(z80->af.hi);
+
+	z80SetFlag(z80, (FLAG_N | FLAG_H));
+	z80->cycles = 4;
+}
+
+void halt(struct Z80* z80)
+{
+
 }
 
 void di(struct Z80* z80)

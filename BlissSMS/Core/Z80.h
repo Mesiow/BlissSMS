@@ -103,11 +103,13 @@ void loadMemReg8(struct Z80* z80, u8 reg);
 void loadHlReg(struct Z80* z80, u8 reg);
 void load16Reg(struct Z80* z80, union Register* reg);
 void load16A(struct Z80* z80);
+void loadReg(struct Z80* z80, u8* destReg, u8 sourceReg);
 
 
 //Arithmetic
-void dec16(struct Z80* z80, union Register* reg);
-void dec8(struct Z80* z80, u8* reg);
+void incReg16(struct Z80* z80, union Register* reg);
+void decReg16(struct Z80* z80, union Register* reg);
+void decReg8(struct Z80* z80, u8* reg);
 
 //Branches/Jumps/Returns
 void jrImm(struct Z80* z80);
@@ -123,7 +125,11 @@ void jpCond(struct Z80* z80, u8 cond);
 
 //Logical
 void xor(struct Z80* z80, u8 reg);
+void xorMemHl(struct Z80* z80);
 void or(struct Z80* z80, u8 reg);
+void orMemHl(struct Z80* z80);
+void and(struct Z80* z80, u8 reg);
+void andMemHl(struct Z80* z80);
 
 //Shifts
 void rlca(struct Z80* z80);
@@ -145,6 +151,10 @@ void in(struct Z80* z80, u8 sourcePort, u8* destReg, u8 opcode);
 
 void otir(struct Z80* z80);
 void ldir(struct Z80* z80);
+
+//Misc
+void cpl(struct Z80* z80);
+void halt(struct Z80* z80);
 
 //Interrupt related instructions
 void di(struct Z80* z80);
