@@ -19,12 +19,14 @@ void systemRunEmulation(struct System* sys)
 		s32 cycles_this_frame = 0;
 		while (cycles_this_frame < MAX_CYCLES_PER_FRAME) {
 			u16 cycles = z80Clock(&sys->z80);
-
-			//vdp.update(cycles);
-			//psg.update(cycles);
-			//z80HandleInterrupts(&sys->z80);
-
 			cycles_this_frame += cycles;
+
+			//vdpUpdate(cycles);
+			//psgUpdate(cycles);
+			if (sys->z80.process_interrupt_delay)
+				continue;
+
+			z80HandleInterrupts(&sys->z80);
 		}
 		//update joypad
 		//update graphics buffer

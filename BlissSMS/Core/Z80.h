@@ -50,6 +50,7 @@ struct Z80 {
 	u16 cycles;
 	u8 iff1;
 	u8 iff2;
+	u8 process_interrupt_delay; //flag used for instruction delay after ei is executed
 };
 
 struct Bus* memBus;
@@ -97,6 +98,10 @@ void loadReg8(struct Z80* z80, u8 *reg);
 void loadHL8(struct Z80* z80);
 void loadAReg(struct Z80* z80, u8 reg);
 void loadRegHL(struct Z80* z80, u8* reg);
+void loadMemReg16(struct Z80* z80, union Register *reg);
+void loadMemReg8(struct Z80* z80, u8 reg);
+void loadHlReg(struct Z80* z80, u8 reg);
+
 
 //Arithmetic
 void dec16(struct Z80* z80, union Register* reg);
@@ -111,6 +116,8 @@ void call(struct Z80* z80);
 void callCond(struct Z80* z80, u8 cond);
 void ret(struct Z80* z80);
 void retCond(struct Z80* z80, u8 cond);
+void jp(struct Z80* z80);
+void jpCond(struct Z80* z80, u8 cond);
 
 //Logical
 void xor(struct Z80* z80, u8 reg);
