@@ -33,7 +33,7 @@ void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address)
 	}
 	//Mirrored system ram
 	else if (address >= 0xE000 && address <= 0xFFFF) {
-		bus->systemRam[address & 0xDFFF] = value;
+		bus->systemRam[address & (SYSRAM_SIZE - 1)] = value;
 	}
 }
 
