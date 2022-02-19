@@ -101,6 +101,8 @@ void loadRegHL(struct Z80* z80, u8* reg);
 void loadMemReg16(struct Z80* z80, union Register *reg);
 void loadMemReg8(struct Z80* z80, u8 reg);
 void loadHlReg(struct Z80* z80, u8 reg);
+void load16Reg(struct Z80* z80, union Register* reg);
+void load16A(struct Z80* z80);
 
 
 //Arithmetic
@@ -125,6 +127,7 @@ void or(struct Z80* z80, u8 reg);
 
 //Shifts
 void rlca(struct Z80* z80);
+void rrca(struct Z80* z80);
 
 //Exchanges
 void ex(struct Z80* z80, union Register *reg1, union Register *reg2);

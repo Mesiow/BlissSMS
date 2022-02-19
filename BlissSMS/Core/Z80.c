@@ -212,6 +212,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		//Exchanges
 		case 0x08: ex(z80, &z80->af, &z80->shadowedregs.af); break;
 		case 0xEB: ex(z80, &z80->de, &z80->hl); break;
+		case 0xD9: exx(z80); break;
 
 		//Load register into mem location pointed to by immediate u16
 		case 0x22: loadMemReg16(z80, &z80->hl); break;
@@ -225,6 +226,9 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x2E: loadReg8(z80, &z80->hl.lo); break;
 		case 0x3E: loadReg8(z80, &z80->af.hi); break;
 		case 0x36: loadHL8(z80); break;
+
+		case 0x2A: load16Reg(z80, &z80->hl); break;
+		case 0x3A: load16A(z80); break;
 
 		case 0x78: loadAReg(z80, z80->bc.hi); break;
 		case 0x79: loadAReg(z80, z80->bc.lo); break;
@@ -251,6 +255,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x10: djnz(z80); break;
 		case 0x18: jrImm(z80); break;
 		case 0x20: jrImmCond(z80, getFlag(z80, FLAG_Z) == 0); break;
+		case 0x28: jrImmCond(z80, getFlag(z80, FLAG_Z)); break;
 
 		case 0xAF: xor(z80, z80->af.hi); break;
 		case 0xAD: xor(z80, z80->hl.lo); break;
@@ -446,6 +451,27 @@ void loadHlReg(struct Z80* z80, u8 reg)
 	z80->cycles = 7;
 }
 
+void load16Reg(struct Z80* z80, union Register* reg)
+{
+	u16 address = z80FetchU16(z80);
+	
+	u8 lo = z80ReadU8(address);
+	u8 hi = z80ReadU8(address + 1);
+	u16 value = ((hi << 8) | lo);
+
+	reg->value = value;
+	z80->cycles = 16;
+}
+
+void load16A(struct Z80* z80)
+{
+	u16 address = z80FetchU16(z80);
+	u8 value = z80ReadU8(address);
+
+	z80->af.hi = value;
+	z80->cycles = 13;
+}
+
 void dec16(struct Z80* z80, union Register* reg)
 {
 	reg->value--;
@@ -590,6 +616,8 @@ void or(struct Z80 * z80, u8 reg)
 void rlca(struct Z80* z80)
 {
 	u8 msb = (z80->af.hi >> 7) & 0x1;
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+
 	z80->af.hi <<= 1;
 
 	//Old bit 7 stored to carry, old bit 7 moved to it 0
@@ -602,7 +630,26 @@ void rlca(struct Z80* z80)
 		z80->af.hi = clearBit(z80->af.hi, 0);
 	}
 
+	z80->cycles = 4;
+}
+
+void rrca(struct Z80* z80)
+{
+	u8 lsb = (z80->af.hi & 0x1);
 	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+
+	z80->af.hi >>= 1;
+
+	//Old bit 0 stored to carry, old bit 0 moved to bit 7
+	if (lsb) {
+		z80SetFlag(z80, FLAG_C);
+		z80->af.hi = setBit(z80->af.hi, 7);
+	}
+	else {
+		z80ClearFlag(z80, FLAG_C);
+		z80->af.hi = clearBit(z80->af.hi, 7);
+	}
+
 	z80->cycles = 4;
 }
 
