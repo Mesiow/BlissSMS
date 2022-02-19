@@ -9,3 +9,13 @@ u8 popcount(u8 value)
 	}
 	return count;
 }
+
+u8 setBit(u8 val, u8 bit)
+{
+	return (val | (1 << bit));
+}
+
+u8 clearBit(u8 val, u8 bit)
+{
+	return (val & ~(1 << bit));
+}
