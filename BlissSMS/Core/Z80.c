@@ -206,7 +206,12 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x21: loadReg16(z80, &z80->hl); break;
 		case 0x31: loadReg16(z80, &z80->sp); break;
 
+		//Shifts
 		case 0x07: rlca(z80); break;
+
+		//Exchanges
+		case 0x08: ex(z80, &z80->af, &z80->shadowedregs.af); break;
+		case 0xEB: ex(z80, &z80->de, &z80->hl); break;
 
 		//Load register into mem location pointed to by immediate u16
 		case 0x22: loadMemReg16(z80, &z80->hl); break;
@@ -598,6 +603,32 @@ void rlca(struct Z80* z80)
 	}
 
 	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	z80->cycles = 4;
+}
+
+void ex(struct Z80* z80, union Register* reg1, union Register* reg2)
+{
+	u16 temp_reg1 = reg1->value;
+	reg1->value = reg2->value;
+	reg2->value = temp_reg1;
+
+	z80->cycles = 4;
+}
+
+void exx(struct Z80* z80)
+{
+	u16 temp_bc = z80->bc.value;
+	z80->bc.value = z80->shadowedregs.bc.value;
+	z80->shadowedregs.bc.value = temp_bc;
+
+	u16 temp_de = z80->de.value;
+	z80->de.value = z80->shadowedregs.de.value;
+	z80->shadowedregs.de.value = temp_de;
+
+	u16 temp_hl = z80->hl.value;
+	z80->hl.value = z80->shadowedregs.hl.value;
+	z80->shadowedregs.hl.value = temp_hl;
+
 	z80->cycles = 4;
 }
 

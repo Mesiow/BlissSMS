@@ -126,6 +126,10 @@ void or(struct Z80* z80, u8 reg);
 //Shifts
 void rlca(struct Z80* z80);
 
+//Exchanges
+void ex(struct Z80* z80, union Register *reg1, union Register *reg2);
+void exx(struct Z80* z80);
+
 //Stack
 void push(struct Z80* z80, union Register* reg);
 void pop(struct Z80* z80, union Register* reg);
