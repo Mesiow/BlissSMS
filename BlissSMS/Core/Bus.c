@@ -63,7 +63,7 @@ u8 memoryBusReadU8(struct Bus* bus, u16 address)
 
 	//Mirrored system ram
 	else if (address >= 0xE000 && address <= 0xFFFF) {
-		return bus->systemRam[address & 0xDFFF];
+		return bus->systemRam[address & (SYSRAM_SIZE - 1)];
 	}
 
 	return 0x0;
