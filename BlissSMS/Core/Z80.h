@@ -123,6 +123,9 @@ void jpCond(struct Z80* z80, u8 cond);
 void xor(struct Z80* z80, u8 reg);
 void or(struct Z80* z80, u8 reg);
 
+//Shifts
+void rlca(struct Z80* z80);
+
 //Stack
 void push(struct Z80* z80, union Register* reg);
 void pop(struct Z80* z80, union Register* reg);

@@ -206,6 +206,8 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x21: loadReg16(z80, &z80->hl); break;
 		case 0x31: loadReg16(z80, &z80->sp); break;
 
+		case 0x07: rlca(z80); break;
+
 		//Load register into mem location pointed to by immediate u16
 		case 0x22: loadMemReg16(z80, &z80->hl); break;
 		case 0x32: loadMemReg8(z80, z80->af.hi); break;
@@ -258,6 +260,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xCD: call(z80); break;
 		case 0xC9: ret(z80); break;
 		case 0xC3: jp(z80); break;
+		case 0xD2: jpCond(z80, getFlag(z80, FLAG_C) == 0); break;
 
 		case 0xC7: rst(z80, 0x00); break;
 		case 0xCF: rst(z80, 0x08); break;
@@ -306,11 +309,12 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 void executeIxInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
-	default:
-		printf("--Unimplemented Ix Instruction--: 0x%02X\n", opcode);
-		printf("PC: 0x%04X\n", z80->pc);
-		assert(0);
-		break;
+		case 0xE5: push(z80, &z80->ix); break;
+		default:
+			printf("--Unimplemented Ix Instruction--: 0x%02X\n", opcode);
+			printf("PC: 0x%04X\n", z80->pc);
+			assert(0);
+			break;
 	}
 }
 
@@ -363,6 +367,7 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 void executeIyInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+	case 0xE5: push(z80, &z80->iy); break;
 	default:
 		printf("--Unimplemented Iy Instruction--: 0x%02X\n", opcode);
 		printf("PC: 0x%04X\n", z80->pc);
@@ -577,14 +582,35 @@ void or(struct Z80 * z80, u8 reg)
 	z80->cycles = 4;
 }
 
+void rlca(struct Z80* z80)
+{
+	u8 msb = (z80->af.hi >> 7) & 0x1;
+	z80->af.hi <<= 1;
+
+	//Old bit 7 stored to carry, old bit 7 moved to it 0
+	if (msb) {
+		z80SetFlag(z80, FLAG_C);
+		z80->af.hi = setBit(z80->af.hi, 0);
+	}
+	else {
+		z80ClearFlag(z80, FLAG_C);
+		z80->af.hi = clearBit(z80->af.hi, 0);
+	}
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	z80->cycles = 4;
+}
+
 void push(struct Z80* z80, union Register* reg)
 {
 	z80->sp--;
-	z80WriteU8(z80->af.hi, z80->sp);
+	z80WriteU8(reg->hi, z80->sp);
 	z80->sp--;
-	z80WriteU8(z80->af.lo, z80->sp);
+	z80WriteU8(reg->lo, z80->sp);
 
 	z80->cycles = 11;
+	if (reg == &z80->ix || reg == &z80->iy)
+		z80->cycles += 4;
 }
 
 void pop(struct Z80* z80, union Register* reg)
