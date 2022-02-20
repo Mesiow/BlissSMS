@@ -51,6 +51,7 @@ struct Z80 {
 	u8 iff1;
 	u8 iff2;
 	u8 process_interrupt_delay; //flag used for instruction delay after ei is executed
+	u8 halted;
 };
 
 struct Bus* memBus;

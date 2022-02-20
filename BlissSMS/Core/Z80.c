@@ -25,6 +25,7 @@ void z80Init(struct Z80* z80)
 	z80->iff1 = 0;
 	z80->iff2 = 0;
 	z80->process_interrupt_delay = 0;
+	z80->halted = 0;
 }
 
 void z80ConnectBus(struct Bus* bus)
@@ -68,6 +69,7 @@ void z80HandleInterrupts(struct Z80* z80)
 	//Maskable interrupts enabled
 	if (z80->iff1 & z80->iff2) {
 		if (z80->interrupt_mode == One) {
+			z80->halted = 0;
 			//Save current pc to the stack
 			z80->sp--;
 			z80WriteU8((z80->pc >> 8) & 0xFF, z80->sp);
@@ -83,6 +85,8 @@ void z80HandleInterrupts(struct Z80* z80)
 
 void z80HandleNonMaskableInterrupt(struct Z80* z80)
 {
+	z80->halted = 0; //exit halted state
+
 	z80->iff2 = z80->iff1;
 	z80->iff1 = 0;
 	z80->pc = NMI_VECTOR;
@@ -144,13 +148,17 @@ u16 z80FetchU16(struct Z80* z80)
 
 u16 z80Clock(struct Z80* z80)
 {
-	if (z80->process_interrupt_delay) 
-		z80->process_interrupt_delay = 0;
+	if (!z80->halted) {
+		if (z80->process_interrupt_delay)
+			z80->process_interrupt_delay = 0;
 
-	u8 opcode = z80ReadU8(z80->pc);
-	z80->pc++;
+		u8 opcode = z80ReadU8(z80->pc);
+		z80->pc++;
 
-	executeInstruction(z80, opcode);
+		executeInstruction(z80, opcode);
+	}
+	else //execute nops
+		z80->cycles = 4;
 
 	return z80->cycles;
 }
@@ -888,7 +896,8 @@ void cpl(struct Z80* z80)
 
 void halt(struct Z80* z80)
 {
-
+	z80->halted = 1;
+	z80->cycles = 4;
 }
 
 void di(struct Z80* z80)
