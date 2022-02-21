@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
 		SDL_RenderPresent(renderer);
 	}
 
+	systemFree(&sms);
 
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
