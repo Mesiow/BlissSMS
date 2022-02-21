@@ -20,8 +20,8 @@ void cartLoad(struct Cart* cart, const char* path)
 
 	cart->romsize = file_size;
 	//32kb, 64kb, 128kb, 256kb
-	if (file_size == 0x8000 || file_size == 0x10000
-		|| file_size == 0x20000 || file_size == 0x40000) {
+	if (file_size == CART_32K || file_size == CART_64K
+		|| file_size == CART_128K || file_size == CART_256K) {
 		cart->memory = (u8*)malloc(file_size * sizeof(u8));
 		printf("cart size: 0x%05X\n", file_size);
 	}
