@@ -2,9 +2,15 @@
 
 void systemInit(struct System* sys)
 {
+	ioInit(&sys->io);
 	memoryBusInit(&sys->bus);
 	memoryBusLoadBios(&sys->bus, "test_roms/bios13fx.sms");
-	ioInit(&sys->io);
+	memoryBusConnectIo(&sys->io);
+
+	cartInit(&sys->cart);
+	cartLoad(&sys->cart, "test_roms/zexdoc.sms");
+
+	memoryBusLoadCartridge(&sys->bus, &sys->cart);
 
 	z80Init(&sys->z80);
 	z80ConnectBus(&sys->bus);
@@ -31,6 +37,11 @@ void systemRunEmulation(struct System* sys)
 		//update joypad
 		//update graphics buffer
 	}
+}
+
+void systemFree(struct System* sys)
+{
+	cartFree(&sys->cart);
 }
 
 void tickCpu(struct System* sys)
