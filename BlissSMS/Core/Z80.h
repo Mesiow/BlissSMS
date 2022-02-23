@@ -52,6 +52,8 @@ struct Z80 {
 	u8 iff2;
 	u8 process_interrupt_delay; //flag used for instruction delay after ei is executed
 	u8 halted;
+
+	u8 last_daa_operation;
 };
 
 struct Bus* memBus;
@@ -110,7 +112,6 @@ void load16Reg(struct Z80* z80, union Register* reg);
 void load16A(struct Z80* z80);
 void loadReg(struct Z80* z80, u8* destReg, u8 sourceReg);
 
-
 //Arithmetic
 void incReg16(struct Z80* z80, union Register* reg);
 void decReg16(struct Z80* z80, union Register* reg);
@@ -161,6 +162,10 @@ void ldir(struct Z80* z80);
 void cpl(struct Z80* z80);
 void halt(struct Z80* z80);
 void cp(struct Z80* z80);
+void daa(struct Z80* z80);
+
+//Bit instructions
+void bitIx(struct Z80* z80, u8 bit);
 
 //Interrupt related instructions
 void di(struct Z80* z80);

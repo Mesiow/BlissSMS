@@ -200,8 +200,12 @@ void executeInstruction(struct Z80* z80, u8 opcode)
 		case 0xDD: {
 			u8 ix_opcode = z80ReadU8(z80->pc++);
 			if (ix_opcode == 0xCB) {
-				u8 ixbit_opcode = z80ReadU8(z80->pc++);
+				//the opcode is the last byte in the instruction
+				//and the immediate byte to fetch is the second to last
+				u8 ixbit_opcode = z80ReadU8(z80->pc + 1);
+
 				executeIxBitInstruction(z80, ixbit_opcode);
+				z80->pc += 1;
 			}
 			else
 				executeIxInstruction(z80, ix_opcode);
@@ -244,6 +248,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x2F: cpl(z80); break;
 		case 0x76: halt(z80); break;
 		case 0xFE: cp(z80); break;
+		case 0x27: daa(z80); break;
 
 		//Shifts
 		case 0x07: rlca(z80); break;
@@ -338,9 +343,13 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 
 		case 0xCD: call(z80); break;
 		case 0xDC: callCond(z80, getFlag(z80, FLAG_C)); break;
+
 		case 0xC9: ret(z80); break;
+
 		case 0xC3: jp(z80); break;
+		case 0xCA: jpCond(z80, getFlag(z80, FLAG_Z)); break;
 		case 0xD2: jpCond(z80, getFlag(z80, FLAG_C) == 0); break;
+		case 0xDA: jpCond(z80, getFlag(z80, FLAG_C)); break;
 
 		case 0xC7: rst(z80, 0x00); break;
 		case 0xCF: rst(z80, 0x08); break;
@@ -389,6 +398,7 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 void executeIxInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		case 0x21: loadReg16(z80, &z80->ix); z80->cycles += 4; break;
 		case 0xE5: push(z80, &z80->ix); break;
 		default:
 			printf("--Unimplemented Ix Instruction--: 0x%02X\n", opcode);
@@ -401,6 +411,7 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+	case 0x7E: bitIx(z80, 7); break;
 	default:
 		printf("--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
 		printf("PC: 0x%04X\n", z80->pc);
@@ -932,7 +943,7 @@ void cp(struct Z80* z80)
 	u8 value = z80FetchU8(z80);
 	u8 result = z80->af.hi - value;
 
-	//Todo: Affect N flag based on last daa instruction
+	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
 	z80AffectFlag(z80, z80OverflowFromSub(z80->af.hi, value), FLAG_PV);
 	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
@@ -940,6 +951,72 @@ void cp(struct Z80* z80)
 	z80AffectFlag(z80, z80HalfBorrowOccured(z80->af.hi, value), FLAG_H);
 
 	z80->cycles = 7;
+}
+
+void daa(struct Z80* z80)
+{
+	/*
+
+			The DA instruction adjusts the 8-bit value in the accumulator
+			to correspond to binary-coded decimal (BCD) format.
+			This instruction begins by testing the low-order nibble of the
+			accumulator. If the AC flag is set or if the low 4 bits of the
+			accumulator exceed a value of 9, the accumulator is incremented
+			by 6. The high-order nibble is then tested.
+			If the carry flag is set or if the high 4 bits of the accumulator
+			exceed a value of 9, the value 60h is added to the accumulator.
+			This instruction performs a decimal conversion by adding 00h,
+			06h, or 66h to the accumulator depending on the initial contents
+			of the PSW and accumulator.
+
+		*/
+	s32 a = z80->af.hi;
+
+	if (!getFlag(z80, FLAG_N)) {
+		if ((getFlag(z80, FLAG_H)) || (a & 0x0F) > 9)
+			a += 6;
+
+		if ((getFlag(z80, FLAG_C)) || ((a >> 4) & 0xF) > 9)
+			a += 0x60;
+
+		z80->last_daa_operation = 0;
+	}
+	else {
+		if (getFlag(z80, FLAG_H)) {
+			a -= 6;
+			if (!(getFlag(z80, FLAG_C)))
+				a &= 0xFF;
+		}
+		if (getFlag(z80, FLAG_C))
+			a -= 0x60;
+
+		z80->last_daa_operation = 1;
+	}
+
+	z80ClearFlag(z80, (FLAG_H | FLAG_Z));
+	if (a & 0x100)
+		z80SetFlag(z80, FLAG_C);
+
+	z80->af.hi = a & 0xFF;
+
+	if (!z80->af.hi)
+		z80SetFlag(z80, FLAG_Z);
+
+	z80AffectFlag(z80, z80IsEvenParity(z80->af.hi), FLAG_PV);
+
+	z80->cycles = 4;
+}
+
+void bitIx(struct Z80* z80, u8 bit)
+{
+	u8 offset = z80FetchU8(z80);
+	u8 value = z80ReadU8(z80->ix.value + offset);
+
+	z80AffectFlag(z80, testBit(value, bit) == 0, FLAG_Z);
+	z80ClearFlag(z80, FLAG_N);
+	z80SetFlag(z80, FLAG_H);
+
+	z80->cycles = 20;
 }
 
 void di(struct Z80* z80)
