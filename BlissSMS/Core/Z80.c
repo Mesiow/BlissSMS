@@ -98,9 +98,12 @@ u8 z80OverflowFromAdd(u8 op1, u8 op2)
 }
 
 u8 z80OverflowFromSub(u8 op1, u8 op2)
-{
-	return 0;
-}
+{		
+	u8 total = (op1 - op2) & 0xFF;
+	//first check if both operands have a different sign,
+	//then check if the result has the same sign as the second operand
+	return (((s8)(op1 ^ op2) < 0) && ((s8)(op2 ^ total) >= 0));
+}             
 
 u8 z80IsEvenParity(u8 value)
 {
@@ -112,6 +115,26 @@ u8 z80IsSigned(u8 value)
 {
 	s8 signed_value = (s8)value;
 	return (((signed_value >> 7) & 0x1) == 0x1);
+}
+
+u8 z80CarryOccured(u8 op1, u8 op2)
+{
+	return (((op1 & 0xFF) + (op2 & 0xFF)) > 0xFF);
+}
+
+u8 z80HalfCarryOccured(u8 op1, u8 op2)
+{
+	return ((op1 & 0xF) + (op2 & 0xF) > 0xF);
+}
+
+u8 z80BorrowOccured(u8 op1, u8 op2)
+{
+	return (op2 > op2);
+}
+
+u8 z80HalfBorrowOccured(u8 op1, u8 op2)
+{
+	return (((op1 & 0xF) - (op2 & 0xF)) < 0);
 }
 
 void z80WriteU8(u8 value, u16 address)
@@ -217,6 +240,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		//Misc
 		case 0x2F: cpl(z80); break;
 		case 0x76: halt(z80); break;
+		case 0xFE: cp(z80); break;
 
 		//Shifts
 		case 0x07: rlca(z80); break;
@@ -898,6 +922,21 @@ void halt(struct Z80* z80)
 {
 	z80->halted = 1;
 	z80->cycles = 4;
+}
+
+void cp(struct Z80* z80)
+{
+	u8 value = z80FetchU8(z80);
+	u8 result = z80->af.hi - value;
+
+	//Todo: Affect N flag based on last daa instruction
+	z80AffectFlag(z80, result == 0, FLAG_Z);
+	z80AffectFlag(z80, z80OverflowFromSub(z80->af.hi, value), FLAG_PV);
+	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80BorrowOccured(z80->af.hi, value), FLAG_C);
+	z80AffectFlag(z80, z80HalfBorrowOccured(z80->af.hi, value), FLAG_H);
+
+	z80->cycles = 7;
 }
 
 void di(struct Z80* z80)

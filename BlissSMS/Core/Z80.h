@@ -72,6 +72,10 @@ u8 z80OverflowFromAdd(u8 op1, u8 op2);
 u8 z80OverflowFromSub(u8 op1, u8 op2);
 u8 z80IsEvenParity(u8 value);
 u8 z80IsSigned(u8 value);
+u8 z80CarryOccured(u8 op1, u8 op2);
+u8 z80HalfCarryOccured(u8 op1, u8 op2);
+u8 z80BorrowOccured(u8 op1, u8 op2);
+u8 z80HalfBorrowOccured(u8 op1, u8 op2);
 
 void z80WriteU8(u8 value, u16 address);
 
@@ -156,6 +160,7 @@ void ldir(struct Z80* z80);
 //Misc
 void cpl(struct Z80* z80);
 void halt(struct Z80* z80);
+void cp(struct Z80* z80);
 
 //Interrupt related instructions
 void di(struct Z80* z80);
