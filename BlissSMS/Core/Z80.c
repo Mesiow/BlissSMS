@@ -94,7 +94,10 @@ void z80HandleNonMaskableInterrupt(struct Z80* z80)
 
 u8 z80OverflowFromAdd(u8 op1, u8 op2)
 {
-	return 0;
+	u8 total = (op1 + op2) & 0xFF;
+	//check if sign are same and if they are ~(op1 ^ op2) will evaluate to 1
+	//then check results sign and then and them together and determine overflow by the msb
+	return (~(op1 ^ op2) & ((op1 ^ total))) >> 7;
 }
 
 u8 z80OverflowFromSub(u8 op1, u8 op2)
@@ -103,7 +106,7 @@ u8 z80OverflowFromSub(u8 op1, u8 op2)
 	//first check if both operands have a different sign,
 	//then check if the result has the same sign as the second operand
 	return (((s8)(op1 ^ op2) < 0) && ((s8)(op2 ^ total) >= 0));
-}             
+}
 
 u8 z80IsEvenParity(u8 value)
 {
