@@ -19,3 +19,8 @@ u8 clearBit(u8 val, u8 bit)
 {
 	return (val & ~(1 << bit));
 }
+
+u8 testBit(u8 val, u8 bit)
+{
+	return (val >> bit) & 0x1;
+}
