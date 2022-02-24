@@ -120,24 +120,44 @@ u8 z80IsSigned(u8 value)
 	return (((signed_value >> 7) & 0x1) == 0x1);
 }
 
-u8 z80CarryOccured(u8 op1, u8 op2)
+u8 z80CarryOccured8(u8 op1, u8 op2)
 {
 	return (((op1 & 0xFF) + (op2 & 0xFF)) > 0xFF);
 }
 
-u8 z80HalfCarryOccured(u8 op1, u8 op2)
+u8 z80HalfCarryOccured8(u8 op1, u8 op2)
 {
 	return ((op1 & 0xF) + (op2 & 0xF) > 0xF);
 }
 
-u8 z80BorrowOccured(u8 op1, u8 op2)
+u8 z80BorrowOccured8(u8 op1, u8 op2)
 {
-	return (op2 > op2);
+	return (op2 > op1);
 }
 
-u8 z80HalfBorrowOccured(u8 op1, u8 op2)
+u8 z80HalfBorrowOccured8(u8 op1, u8 op2)
 {
 	return (((op1 & 0xF) - (op2 & 0xF)) < 0);
+}
+
+u8 z80CarryOccured16(u16 op1, u16 op2)
+{
+	return (((op1 & 0xFFFF) + (op2 & 0xFFFF)) > 0xFFFF);
+}
+
+u8 z80HalfCarryOccured16(u16 op1, u16 op2)
+{
+	return ((op1 & 0xFFF) + (op2 & 0xFFF) > 0xFFF);
+}
+
+u8 z80BorrowOccured16(u16 op1, u16 op2)
+{
+	return (op2 > op1);
+}
+
+u8 z80HalfBorrowOccured16(u16 op1, u16 op2)
+{
+	return (((op1 & 0xFFF) - (op2 & 0xFFF)) < 0);
 }
 
 void z80WriteU8(u8 value, u16 address)
@@ -342,6 +362,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 
 
 		case 0xCD: call(z80); break;
+		case 0xC4: callCond(z80, getFlag(z80, FLAG_Z) == 0); break;
 		case 0xDC: callCond(z80, getFlag(z80, FLAG_C)); break;
 
 		case 0xC9: ret(z80); break;
@@ -398,6 +419,12 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 void executeIxInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		//Adds
+		case 0x09: addReg16(z80, &z80->ix, &z80->bc); z80->cycles += 4; break;
+		case 0x19: addReg16(z80, &z80->ix, &z80->de); z80->cycles += 4; break;
+		case 0x29: addReg16(z80, &z80->ix, &z80->ix); z80->cycles += 4; break;
+		case 0x39: addReg16(z80, &z80->ix, &z80->sp); z80->cycles += 4; break;
+
 		case 0x21: loadReg16(z80, &z80->ix); z80->cycles += 4; break;
 		case 0xE5: push(z80, &z80->ix); break;
 		default:
@@ -574,6 +601,18 @@ void decReg16(struct Z80* z80, union Register* reg)
 void decReg8(struct Z80* z80, u8* reg)
 {
 
+}
+
+void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg)
+{
+	u32 result = destReg->value + sourceReg->value;
+	destReg->value += sourceReg->value;
+
+	z80ClearFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80HalfCarryOccured16(destReg->value, sourceReg->value), FLAG_H);
+	z80AffectFlag(z80, z80CarryOccured16(destReg->value, sourceReg->value), FLAG_C);
+
+	z80->cycles = 11;
 }
 
 void jrImm(struct Z80* z80)
@@ -947,8 +986,8 @@ void cp(struct Z80* z80)
 	z80AffectFlag(z80, result == 0, FLAG_Z);
 	z80AffectFlag(z80, z80OverflowFromSub(z80->af.hi, value), FLAG_PV);
 	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
-	z80AffectFlag(z80, z80BorrowOccured(z80->af.hi, value), FLAG_C);
-	z80AffectFlag(z80, z80HalfBorrowOccured(z80->af.hi, value), FLAG_H);
+	z80AffectFlag(z80, z80BorrowOccured8(z80->af.hi, value), FLAG_C);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(z80->af.hi, value), FLAG_H);
 
 	z80->cycles = 7;
 }
