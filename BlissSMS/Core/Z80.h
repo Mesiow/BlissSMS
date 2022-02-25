@@ -53,6 +53,7 @@ struct Z80 {
 	u8 process_interrupt_delay; //flag used for instruction delay after ei is executed
 	u8 halted;
 
+	u8 service_nmi;
 	u8 last_daa_operation;
 };
 
@@ -124,6 +125,7 @@ void loadReg(struct Z80* z80, u8* destReg, u8 sourceReg);
 void incReg16(struct Z80* z80, union Register* reg);
 void decReg16(struct Z80* z80, union Register* reg);
 void decReg8(struct Z80* z80, u8* reg);
+void incReg8(struct Z80* z80, u8* reg);
 void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg);
 
 //Branches/Jumps/Returns
@@ -134,6 +136,8 @@ void rst(struct Z80* z80, u8 vector);
 void call(struct Z80* z80);
 void callCond(struct Z80* z80, u8 cond);
 void ret(struct Z80* z80);
+void reti(struct Z80* z80);
+void retn(struct Z80* z80);
 void retCond(struct Z80* z80, u8 cond);
 void jp(struct Z80* z80);
 void jpCond(struct Z80* z80, u8 cond);
