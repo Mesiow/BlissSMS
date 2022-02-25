@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core\Bus.c" />
+    <ClCompile Include="Core\Cart.c" />
     <ClCompile Include="Core\Io.c" />
     <ClCompile Include="Core\System.c" />
     <ClCompile Include="Core\Util.c" />
@@ -156,6 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Bus.h" />
+    <ClInclude Include="Core\Cart.h" />
     <ClInclude Include="Core\Io.h" />
     <ClInclude Include="Core\System.h" />
     <ClInclude Include="Core\Util.h" />
