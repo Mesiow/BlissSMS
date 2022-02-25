@@ -239,8 +239,10 @@ void executeInstruction(struct Z80* z80, u8 opcode)
 		case 0xFD: {
 			u8 iy_opcode = z80ReadU8(z80->pc++);
 			if (iy_opcode == 0xCB) {
-				u8 iybit_opcode = z80ReadU8(z80->pc++);
+				u8 iybit_opcode = z80ReadU8(z80->pc + 1);
+
 				executeIyBitInstruction(z80, iybit_opcode);
+				z80->pc += 1;
 			}
 			else
 				executeIyInstruction(z80, iy_opcode);
@@ -296,6 +298,9 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x3A: load16A(z80); break;
 
 		case 0x4F: loadReg(z80, &z80->bc.lo, z80->af.hi); break;
+		case 0x54: loadReg(z80, &z80->de.hi, z80->hl.hi); break;
+		case 0x5D: loadReg(z80, &z80->de.lo, z80->hl.lo); break;
+		case 0x6F: loadReg(z80, &z80->hl.lo, z80->af.hi); break;
 
 		case 0x78: loadAReg(z80, z80->bc.hi); break;
 		case 0x79: loadAReg(z80, z80->bc.lo); break;
@@ -321,6 +326,8 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x77: loadHlReg(z80, z80->af.hi); break;
 
 		//Arithmetic
+		case 0x19: addReg16(z80, &z80->hl, &z80->bc); break;
+		case 0x13: incReg16(z80, &z80->de); break;
 		case 0x23: incReg16(z80, &z80->hl); break;
 		case 0x0B: decReg16(z80, &z80->bc); break;
 		case 0x1B: decReg16(z80, &z80->de); break;
@@ -420,12 +427,14 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
 		//Adds
-		case 0x09: addReg16(z80, &z80->ix, &z80->bc); z80->cycles += 4; break;
-		case 0x19: addReg16(z80, &z80->ix, &z80->de); z80->cycles += 4; break;
-		case 0x29: addReg16(z80, &z80->ix, &z80->ix); z80->cycles += 4; break;
-		case 0x39: addReg16(z80, &z80->ix, &z80->sp); z80->cycles += 4; break;
+		case 0x09: addReg16(z80, &z80->ix, &z80->bc); break;
+		case 0x19: addReg16(z80, &z80->ix, &z80->de); break;
+		case 0x29: addReg16(z80, &z80->ix, &z80->ix); break;
+		case 0x39: addReg16(z80, &z80->ix, &z80->sp); break;
 
 		case 0x21: loadReg16(z80, &z80->ix); z80->cycles += 4; break;
+
+		case 0xE1: pop(z80, &z80->ix); break;
 		case 0xE5: push(z80, &z80->ix); break;
 		default:
 			printf("--Unimplemented Ix Instruction--: 0x%02X\n", opcode);
@@ -438,12 +447,12 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
-	case 0x7E: bitIx(z80, 7); break;
-	default:
-		printf("--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
-		printf("PC: 0x%04X\n", z80->pc);
-		assert(0);
-		break;
+		case 0x7E: bitIx(z80, 7); break;
+		default:
+			printf("--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
+			printf("PC: 0x%04X\n", z80->pc);
+			assert(0);
+			break;
 	}
 }
 
@@ -485,23 +494,24 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 void executeIyInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
-	case 0xE5: push(z80, &z80->iy); break;
-	default:
-		printf("--Unimplemented Iy Instruction--: 0x%02X\n", opcode);
-		printf("PC: 0x%04X\n", z80->pc);
-		assert(0);
-		break;
+		case 0xE1: pop(z80, &z80->iy); break;
+		case 0xE5: push(z80, &z80->iy); break;
+		default:
+			printf("--Unimplemented Iy Instruction--: 0x%02X\n", opcode);
+			printf("PC: 0x%04X\n", z80->pc);
+			assert(0);
+			break;
 	}
 }
 
 void executeIyBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
-	default:
-		printf("--Unimplemented Iy Bit Instruction--: 0x%02X\n", opcode);
-		printf("PC: 0x%04X\n", z80->pc);
-		assert(0);
-		break;
+		default:
+			printf("--Unimplemented Iy Bit Instruction--: 0x%02X\n", opcode);
+			printf("PC: 0x%04X\n", z80->pc);
+			assert(0);
+			break;
 	}
 }
 
@@ -605,7 +615,6 @@ void decReg8(struct Z80* z80, u8* reg)
 
 void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg)
 {
-	u32 result = destReg->value + sourceReg->value;
 	destReg->value += sourceReg->value;
 
 	z80ClearFlag(z80, FLAG_N);
@@ -613,6 +622,8 @@ void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceRe
 	z80AffectFlag(z80, z80CarryOccured16(destReg->value, sourceReg->value), FLAG_C);
 
 	z80->cycles = 11;
+	if (destReg == &z80->ix || destReg == &z80->iy);
+		z80->cycles += 4;
 }
 
 void jrImm(struct Z80* z80)
@@ -869,6 +880,8 @@ void pop(struct Z80* z80, union Register* reg)
 	z80->sp++;
 
 	z80->cycles = 10;
+	if (reg == &z80->ix || reg == &z80->iy)
+		z80->cycles += 4;
 }
 
 void outa(struct Z80* z80)
