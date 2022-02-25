@@ -297,8 +297,10 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x2A: load16Reg(z80, &z80->hl); break;
 		case 0x3A: load16A(z80); break;
 
+		//Load src reg into dest reg
 		case 0x4F: loadReg(z80, &z80->bc.lo, z80->af.hi); break;
 		case 0x54: loadReg(z80, &z80->de.hi, z80->hl.hi); break;
+		case 0x5B: loadReg(z80, &z80->de.lo, z80->de.lo); break;
 		case 0x5D: loadReg(z80, &z80->de.lo, z80->hl.lo); break;
 		case 0x6F: loadReg(z80, &z80->hl.lo, z80->af.hi); break;
 
@@ -333,6 +335,8 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x1B: decReg16(z80, &z80->de); break;
 		case 0x2B: decReg16(z80, &z80->hl); break;
 		case 0x3B: decReg16(z80, &z80->sp); break;
+		case 0x25: decReg8(z80, &z80->hl.hi); break;
+		case 0x3C: incReg8(z80, &z80->af.hi); break;
 
 		//Jumps/Branches/Rets
 		case 0x10: djnz(z80); break;
@@ -340,6 +344,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x20: jrImmCond(z80, getFlag(z80, FLAG_Z) == 0); break;
 		case 0x28: jrImmCond(z80, getFlag(z80, FLAG_Z)); break;
 
+		//Logical
 		case 0xA0: and(z80, z80->bc.hi); break;
 		case 0xA1: and(z80, z80->bc.lo); break;
 		case 0xA2: and(z80, z80->de.hi); break;
@@ -348,6 +353,8 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xA5: and(z80, z80->hl.lo); break;
 		case 0xA6: andMemHl(z80); break;
 		case 0xA7: and(z80, z80->af.hi); break;
+		case 0xE6: and(z80, z80FetchU8(z80)); z80->cycles += 3; break;
+
 
 		case 0xA8: xor(z80, z80->bc.hi); break;
 		case 0xA9: xor(z80, z80->bc.lo); break;
@@ -374,11 +381,14 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 
 		case 0xC9: ret(z80); break;
 
+		//Jumps
+		case 0xC2: jpCond(z80, getFlag(z80, FLAG_Z) == 0); break;
 		case 0xC3: jp(z80); break;
 		case 0xCA: jpCond(z80, getFlag(z80, FLAG_Z)); break;
 		case 0xD2: jpCond(z80, getFlag(z80, FLAG_C) == 0); break;
 		case 0xDA: jpCond(z80, getFlag(z80, FLAG_C)); break;
 
+		//Restarts
 		case 0xC7: rst(z80, 0x00); break;
 		case 0xCF: rst(z80, 0x08); break;
 		case 0xD7: rst(z80, 0x10); break;
@@ -610,7 +620,30 @@ void decReg16(struct Z80* z80, union Register* reg)
 
 void decReg8(struct Z80* z80, u8* reg)
 {
+	u8 result = (*reg) - 1;
 
+	z80SetFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, result == 0, FLAG_Z);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(*reg, 1), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromSub(*reg, 1), FLAG_PV);
+
+	(*reg)--;
+	z80->cycles = 4;
+}
+
+void incReg8(struct Z80* z80, u8* reg)
+{
+	u8 result = (*reg) + 1;
+
+	z80ClearFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, result == 0, FLAG_Z);
+	z80AffectFlag(z80, z80HalfCarryOccured8(*reg, 1), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromAdd(*reg, 1), FLAG_PV);
+
+	(*reg)++;
+	z80->cycles = 4;
 }
 
 void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg)
