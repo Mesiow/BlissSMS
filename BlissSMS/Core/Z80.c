@@ -26,6 +26,8 @@ void z80Init(struct Z80* z80)
 	z80->iff2 = 0;
 	z80->process_interrupt_delay = 0;
 	z80->halted = 0;
+	z80->last_daa_operation = 0;
+	z80->service_nmi = 0;
 }
 
 void z80ConnectBus(struct Bus* bus)
@@ -66,30 +68,34 @@ u8 getFlag(struct Z80* z80, u8 flag)
 
 void z80HandleInterrupts(struct Z80* z80)
 {
-	//Maskable interrupts enabled
-	if (z80->iff1 & z80->iff2) {
-		if (z80->interrupt_mode == One) {
-			z80->halted = 0;
-			//Save current pc to the stack
-			z80->sp--;
-			z80WriteU8((z80->pc >> 8) & 0xFF, z80->sp);
-			z80->sp--;
-			z80WriteU8(z80->pc & 0xFF, z80->sp);
+	//nmi has priority over maskable irqs
+	if (z80->service_nmi) {
+		z80->service_nmi = 0;
+		z80->halted = 0; //exit halted state
 
-			//disable interrupts and jump to routine
-			z80->iff1 = z80->iff2 = 0;
-			z80->pc = INT_VECTOR;
+		z80->iff2 = z80->iff1;
+		z80->iff1 = 0;
+		z80->pc = NMI_VECTOR;
+	}
+
+	u8 requestingInterrupts = 0;
+	if (requestingInterrupts) { //if vdp is requesting interrupts
+		//Maskable interrupts enabled
+		if (z80->iff1) {
+			if (z80->interrupt_mode == One) {
+				z80->halted = 0;
+				//Save current pc to the stack
+				z80->sp--;
+				z80WriteU8((z80->pc >> 8) & 0xFF, z80->sp);
+				z80->sp--;
+				z80WriteU8(z80->pc & 0xFF, z80->sp);
+
+				//disable interrupts and jump to routine
+				z80->iff1 = z80->iff2 = 0;
+				z80->pc = INT_VECTOR;
+			}
 		}
 	}
-}
-
-void z80HandleNonMaskableInterrupt(struct Z80* z80)
-{
-	z80->halted = 0; //exit halted state
-
-	z80->iff2 = z80->iff1;
-	z80->iff1 = 0;
-	z80->pc = NMI_VECTOR;
 }
 
 u8 z80OverflowFromAdd(u8 op1, u8 op2)
@@ -298,10 +304,12 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x3A: load16A(z80); break;
 
 		//Load src reg into dest reg
+		case 0x47: loadReg(z80, &z80->bc.hi, z80->af.hi); break;
 		case 0x4F: loadReg(z80, &z80->bc.lo, z80->af.hi); break;
 		case 0x54: loadReg(z80, &z80->de.hi, z80->hl.hi); break;
 		case 0x5B: loadReg(z80, &z80->de.lo, z80->de.lo); break;
 		case 0x5D: loadReg(z80, &z80->de.lo, z80->hl.lo); break;
+		case 0x61: loadReg(z80, &z80->hl.hi, z80->bc.lo); break;
 		case 0x6F: loadReg(z80, &z80->hl.lo, z80->af.hi); break;
 
 		case 0x78: loadAReg(z80, z80->bc.hi); break;
@@ -327,7 +335,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x75: loadHlReg(z80, z80->hl.lo); break;
 		case 0x77: loadHlReg(z80, z80->af.hi); break;
 
-		//Arithmetic
+		//Arithmetic inc/dec
 		case 0x19: addReg16(z80, &z80->hl, &z80->bc); break;
 		case 0x13: incReg16(z80, &z80->de); break;
 		case 0x23: incReg16(z80, &z80->hl); break;
@@ -336,6 +344,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x2B: decReg16(z80, &z80->hl); break;
 		case 0x3B: decReg16(z80, &z80->sp); break;
 		case 0x25: decReg8(z80, &z80->hl.hi); break;
+		case 0x14: incReg8(z80, &z80->de.hi); break;
 		case 0x3C: incReg8(z80, &z80->af.hi); break;
 
 		//Jumps/Branches/Rets
@@ -489,6 +498,15 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 
 		case 0x56: im(z80, One); break;
 		case 0x76: im(z80, One); break;
+
+		case 0x45: retn(z80); break;
+		case 0x4D: reti(z80); break;
+		case 0x55: retn(z80); break;
+		case 0x5D: retn(z80); break;
+		case 0x65: retn(z80); break;
+		case 0x6D: retn(z80); break;
+		case 0x75: retn(z80); break;
+		case 0x7D: retn(z80); break;
 
 		case 0xB0: ldir(z80); break;
 		case 0xB3: otir(z80); break;
@@ -734,6 +752,20 @@ void ret(struct Z80* z80)
 	u16 return_address = ((hi << 8) | lo);
 	z80->pc = return_address;
 	z80->cycles = 10;
+}
+
+void reti(struct Z80* z80)
+{
+	ret(z80);
+	z80->iff1 = z80->iff2;
+	z80->cycles += 4;
+}
+
+void retn(struct Z80* z80)
+{
+	ret(z80);
+	z80->iff1 = z80->iff2;
+	z80->cycles += 4;
 }
 
 void retCond(struct Z80* z80, u8 cond)
