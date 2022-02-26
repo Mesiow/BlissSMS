@@ -337,6 +337,10 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 
 		//Arithmetic
 		case 0x19: addReg16(z80, &z80->hl, &z80->bc); break;
+		case 0x09: addReg16(z80, &z80->hl, &z80->bc); break;
+		case 0x29: addReg16(z80, &z80->hl, &z80->hl); break;
+		case 0x39: addReg16(z80, &z80->hl, &z80->sp); break;
+
 		case 0x13: incReg16(z80, &z80->de); break;
 		case 0x23: incReg16(z80, &z80->hl); break;
 		case 0x0B: decReg16(z80, &z80->bc); break;
@@ -345,17 +349,27 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x3B: decReg16(z80, &z80->sp); break;
 		case 0x05: decReg8(z80, &z80->bc.hi); break;
 		case 0x25: decReg8(z80, &z80->hl.hi); break;
+		case 0x1D: decReg8(z80, &z80->de.lo); break;
 		case 0x04: incReg8(z80, &z80->bc.hi); break;
 		case 0x14: incReg8(z80, &z80->de.hi); break;
 		case 0x3C: incReg8(z80, &z80->af.hi); break;
 
+		//8 bit reg add
 		case 0x80: addReg8(z80, &z80->af.hi, z80->bc.hi); break;
+		case 0x81: addReg8(z80, &z80->af.hi, z80->bc.lo); break;
+		case 0x82: addReg8(z80, &z80->af.hi, z80->de.hi); break;
+		case 0x83: addReg8(z80, &z80->af.hi, z80->de.lo); break;
+		case 0x84: addReg8(z80, &z80->af.hi, z80->hl.hi); break;
+		case 0x85: addReg8(z80, &z80->af.hi, z80->hl.lo); break;
+		case 0x86: addMemHl(z80, &z80->af.hi); break;
 
 		//Jumps/Branches/Rets
 		case 0x10: djnz(z80); break;
 		case 0x18: jrImm(z80); break;
 		case 0x20: jrImmCond(z80, getFlag(z80, FLAG_Z) == 0); break;
 		case 0x28: jrImmCond(z80, getFlag(z80, FLAG_Z)); break;
+		case 0x30: jrImmCond(z80, getFlag(z80, FLAG_C) == 0); break;
+		case 0x38: jrImmCond(z80, getFlag(z80, FLAG_C)); break;
 
 		//Logical
 		case 0xA0: and(z80, z80->bc.hi); break;
@@ -698,6 +712,14 @@ void addReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 	(*destReg) += sourceReg;
 
 	z80->cycles = 4;
+}
+
+void addMemHl(struct Z80* z80, u8* destReg)
+{
+	u8 value = z80ReadU8(z80->hl.value);
+	addReg8(z80, destReg, value);
+
+	z80->cycles += 3;
 }
 
 void jrImm(struct Z80* z80)
