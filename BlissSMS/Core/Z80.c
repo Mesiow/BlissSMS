@@ -17,10 +17,10 @@ void z80Init(struct Z80* z80)
 	z80->ix.value = 0x0;
 	z80->iy.value = 0x0;
 	z80->ir.value = 0x0;
-	z80->sp = 0x0;
+	z80->sp = 0xDFF0;
 	z80->pc = 0x0;
 
-	z80->interrupt_mode = Zero;
+	z80->interrupt_mode = One;
 	z80->cycles = 0;
 	z80->iff1 = 0;
 	z80->iff2 = 0;
@@ -335,7 +335,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x75: loadHlReg(z80, z80->hl.lo); break;
 		case 0x77: loadHlReg(z80, z80->af.hi); break;
 
-		//Arithmetic inc/dec
+		//Arithmetic
 		case 0x19: addReg16(z80, &z80->hl, &z80->bc); break;
 		case 0x13: incReg16(z80, &z80->de); break;
 		case 0x23: incReg16(z80, &z80->hl); break;
@@ -343,9 +343,13 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x1B: decReg16(z80, &z80->de); break;
 		case 0x2B: decReg16(z80, &z80->hl); break;
 		case 0x3B: decReg16(z80, &z80->sp); break;
+		case 0x05: decReg8(z80, &z80->bc.hi); break;
 		case 0x25: decReg8(z80, &z80->hl.hi); break;
+		case 0x04: incReg8(z80, &z80->bc.hi); break;
 		case 0x14: incReg8(z80, &z80->de.hi); break;
 		case 0x3C: incReg8(z80, &z80->af.hi); break;
+
+		case 0x80: addReg8(z80, &z80->af.hi, z80->bc.hi); break;
 
 		//Jumps/Branches/Rets
 		case 0x10: djnz(z80); break;
@@ -434,6 +438,9 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 void executeBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		//Bit
+		case 0x6F: bit(z80, z80->af.hi, 5); break;
+		case 0x7F: bit(z80, z80->af.hi, 7); break;
 		default:
 			printf("--Unimplemented Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
@@ -666,15 +673,31 @@ void incReg8(struct Z80* z80, u8* reg)
 
 void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg)
 {
-	destReg->value += sourceReg->value;
-
 	z80ClearFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80HalfCarryOccured16(destReg->value, sourceReg->value), FLAG_H);
 	z80AffectFlag(z80, z80CarryOccured16(destReg->value, sourceReg->value), FLAG_C);
 
+	destReg->value += sourceReg->value;
+
 	z80->cycles = 11;
 	if (destReg == &z80->ix || destReg == &z80->iy);
 		z80->cycles += 4;
+}
+
+void addReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
+{
+	u8 result = (*destReg) + sourceReg;
+	u8 dest_reg = (*destReg);
+
+	z80ClearFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80HalfCarryOccured8(dest_reg, sourceReg), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromAdd(dest_reg, sourceReg), FLAG_PV);
+	z80AffectFlag(z80, z80CarryOccured8(dest_reg, sourceReg), FLAG_C);
+
+	(*destReg) += sourceReg;
+
+	z80->cycles = 4;
 }
 
 void jrImm(struct Z80* z80)
@@ -1122,6 +1145,17 @@ void daa(struct Z80* z80)
 	z80AffectFlag(z80, z80IsEvenParity(z80->af.hi), FLAG_PV);
 
 	z80->cycles = 4;
+}
+
+void bit(struct Z80* z80, u8 reg, u8 bit)
+{
+	u8 test = testBit(reg, bit);
+
+	z80AffectFlag(z80, test == 0, FLAG_Z);
+	z80ClearFlag(z80, FLAG_N);
+	z80SetFlag(z80, FLAG_H);
+
+	z80->cycles = 8;
 }
 
 void bitIx(struct Z80* z80, u8 bit)

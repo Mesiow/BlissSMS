@@ -178,6 +178,9 @@ void cp(struct Z80* z80);
 void daa(struct Z80* z80);
 
 //Bit instructions
+void bit(struct Z80* z80, u8 reg, u8 bit);
+
+//Bit ix instructions
 void bitIx(struct Z80* z80, u8 bit);
 
 //Interrupt related instructions
