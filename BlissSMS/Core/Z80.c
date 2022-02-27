@@ -368,6 +368,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x84: addReg8(z80, &z80->af.hi, z80->hl.hi); break;
 		case 0x85: addReg8(z80, &z80->af.hi, z80->hl.lo); break;
 		case 0x86: addMemHl(z80, &z80->af.hi); break;
+		case 0xC6: addReg8(z80, &z80->af.hi, z80FetchU8(z80)); z80->cycles += 3; break;
 
 		//8 bit reg sub
 		case 0x90: subReg8(z80, &z80->af.hi, z80->bc.hi); break;
@@ -1319,8 +1320,11 @@ void daa(struct Z80* z80)
 
 void ccf(struct Z80* z80)
 {
-	z80ClearFlag(z80, (FLAG_N | FLAG_H));
-	z80SetFlag(z80, getFlag(z80, FLAG_C) ^ 1);
+	u8 carry = getFlag(z80, FLAG_C);
+
+	z80ClearFlag(z80, FLAG_N);
+	z80AffectFlag(z80, carry, FLAG_H);
+	z80AffectFlag(z80, carry ^ 1, FLAG_C);
 
 	z80->cycles = 4;
 }
