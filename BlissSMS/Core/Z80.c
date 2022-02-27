@@ -483,6 +483,15 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x29: addReg16(z80, &z80->ix, &z80->ix); break;
 		case 0x39: addReg16(z80, &z80->ix, &z80->sp); break;
 
+		//Load value from ix + offset into reg8
+		case 0x46: loadRegIx(z80, &z80->bc.hi); break;
+		case 0x4E: loadRegIx(z80, &z80->bc.lo); break;
+		case 0x56: loadRegIx(z80, &z80->de.hi); break;
+		case 0x5E: loadRegIx(z80, &z80->de.lo); break;
+		case 0x66: loadRegIx(z80, &z80->hl.hi); break;
+		case 0x6E: loadRegIx(z80, &z80->hl.lo); break;
+		case 0x7E: loadRegIx(z80, &z80->af.hi); break;
+
 		case 0x21: loadReg16(z80, &z80->ix); z80->cycles += 4; break;
 
 		case 0xE1: pop(z80, &z80->ix); break;
@@ -1224,6 +1233,16 @@ void bit(struct Z80* z80, u8 reg, u8 bit)
 	z80SetFlag(z80, FLAG_H);
 
 	z80->cycles = 8;
+}
+
+void loadRegIx(struct Z80* z80, u8* reg)
+{
+	u8 offset = z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->ix.value + offset);
+
+	*reg = value;
+
+	z80->cycles = 19;
 }
 
 void bitIx(struct Z80* z80, u8 bit)
