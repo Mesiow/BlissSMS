@@ -1,15 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "SDL.h"
 #include "Core\System.h"
 
 int main(int argc, char *argv[]) {
-
 	if (SDL_Init(SDL_INIT_EVERYTHING)) {
 		printf("Failed to init SDL, error: %s\n", SDL_GetError());
 		return -1;
 	}
-	
 	const int width = 640;
 	const int height = 480;
 

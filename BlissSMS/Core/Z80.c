@@ -30,14 +30,14 @@ void z80Init(struct Z80* z80)
 	z80->service_nmi = 0;
 }
 
-void z80ConnectBus(struct Bus* bus)
+void z80ConnectBus(struct Z80* z80, struct Bus* bus)
 {
-	memBus = bus;
+	z80->bus = bus;
 }
 
-void z80ConnectIo(struct Io* io)
+void z80ConnectIo(struct Z80* z80, struct Io* io)
 {
-	ioBus = io;
+	z80->io = io;
 }
 
 void z80AffectFlag(struct Z80* z80, u8 cond, u8 flags)
@@ -86,9 +86,9 @@ void z80HandleInterrupts(struct Z80* z80)
 				z80->halted = 0;
 				//Save current pc to the stack
 				z80->sp--;
-				z80WriteU8((z80->pc >> 8) & 0xFF, z80->sp);
+				z80WriteU8(z80, (z80->pc >> 8) & 0xFF, z80->sp);
 				z80->sp--;
-				z80WriteU8(z80->pc & 0xFF, z80->sp);
+				z80WriteU8(z80, z80->pc & 0xFF, z80->sp);
 
 				//disable interrupts and jump to routine
 				z80->iff1 = z80->iff2 = 0;
@@ -166,34 +166,34 @@ u8 z80HalfBorrowOccured16(u16 op1, u16 op2)
 	return (((op1 & 0xFFF) - (op2 & 0xFFF)) < 0);
 }
 
-void z80WriteU8(u8 value, u16 address)
+void z80WriteU8(struct Z80* z80, u8 value, u16 address)
 {
-	memoryBusWriteU8(memBus, value, address);
+	memoryBusWriteU8(z80->bus, value, address);
 }
 
-u8 z80ReadU8(u16 address)
+u8 z80ReadU8(struct Z80* z80, u16 address)
 {
-	return memoryBusReadU8(memBus, address);
+	return memoryBusReadU8(z80->bus, address);
 }
 
 u8 z80FetchU8(struct Z80* z80)
 {
-	u8 data = memoryBusReadU8(memBus, z80->pc++);
+	u8 data = memoryBusReadU8(z80->bus, z80->pc++);
 	return data;
 }
 
-u16 z80ReadU16(u16 address)
+u16 z80ReadU16(struct Z80* z80, u16 address)
 {
-	u8 lo = memoryBusReadU8(memBus, address);
-	u8 hi = memoryBusReadU8(memBus, address + 1);
+	u8 lo = memoryBusReadU8(z80->bus, address);
+	u8 hi = memoryBusReadU8(z80->bus, address + 1);
 
 	return ((hi << 8) | lo);
 }
 
 u16 z80FetchU16(struct Z80* z80)
 {
-	u8 lo = memoryBusReadU8(memBus, z80->pc++);
-	u8 hi = memoryBusReadU8(memBus, z80->pc++);
+	u8 lo = memoryBusReadU8(z80->bus, z80->pc++);
+	u8 hi = memoryBusReadU8(z80->bus, z80->pc++);
 
 	return ((hi << 8) | lo);
 }
@@ -204,7 +204,7 @@ u16 z80Clock(struct Z80* z80)
 		if (z80->process_interrupt_delay)
 			z80->process_interrupt_delay = 0;
 
-		u8 opcode = z80ReadU8(z80->pc);
+		u8 opcode = z80ReadU8(z80, z80->pc);
 		z80->pc++;
 
 		executeInstruction(z80, opcode);
@@ -219,16 +219,16 @@ void executeInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
 		case 0xCB: {
-			u8 bit_opcode = z80ReadU8(z80->pc++);
+			u8 bit_opcode = z80ReadU8(z80, z80->pc++);
 			executeBitInstruction(z80, bit_opcode);
 		}
 		break;
 		case 0xDD: {
-			u8 ix_opcode = z80ReadU8(z80->pc++);
+			u8 ix_opcode = z80ReadU8(z80, z80->pc++);
 			if (ix_opcode == 0xCB) {
 				//the opcode is the last byte in the instruction
 				//and the immediate byte to fetch is the second to last
-				u8 ixbit_opcode = z80ReadU8(z80->pc + 1);
+				u8 ixbit_opcode = z80ReadU8(z80, z80->pc + 1);
 
 				executeIxBitInstruction(z80, ixbit_opcode);
 				z80->pc += 1;
@@ -238,14 +238,14 @@ void executeInstruction(struct Z80* z80, u8 opcode)
 		}
 		break;
 		case 0xED: {
-			u8 ext_opcode = z80ReadU8(z80->pc++);
+			u8 ext_opcode = z80ReadU8(z80, z80->pc++);
 			executeExtendedInstruction(z80, ext_opcode);
 		}
 		break;
 		case 0xFD: {
-			u8 iy_opcode = z80ReadU8(z80->pc++);
+			u8 iy_opcode = z80ReadU8(z80, z80->pc++);
 			if (iy_opcode == 0xCB) {
-				u8 iybit_opcode = z80ReadU8(z80->pc + 1);
+				u8 iybit_opcode = z80ReadU8(z80, z80->pc + 1);
 
 				executeIyBitInstruction(z80, iybit_opcode);
 				z80->pc += 1;
@@ -579,7 +579,7 @@ void loadReg8(struct Z80* z80, u8 *reg)
 void loadHL8(struct Z80* z80)
 {
 	u8 value = z80FetchU8(z80);
-	z80WriteU8(value, z80->hl.value);
+	z80WriteU8(z80, value, z80->hl.value);
 	z80->cycles = 10;
 }
 
@@ -591,15 +591,15 @@ void loadAReg(struct Z80* z80, u8 reg)
 
 void loadRegHL(struct Z80* z80, u8* reg)
 {
-	*reg = z80ReadU8(z80->hl.value);
+	*reg = z80ReadU8(z80, z80->hl.value);
 	z80->cycles = 7;
 }
 
 void loadMemReg16(struct Z80* z80, union Register* reg)
 {
 	u16 address = z80FetchU16(z80);
-	z80WriteU8(reg->lo, address);
-	z80WriteU8(reg->hi, address + 1);
+	z80WriteU8(z80, reg->lo, address);
+	z80WriteU8(z80, reg->hi, address + 1);
 
 	z80->cycles = 16;
 }
@@ -607,14 +607,14 @@ void loadMemReg16(struct Z80* z80, union Register* reg)
 void loadMemReg8(struct Z80* z80, u8 reg)
 {
 	u16 address = z80FetchU16(z80);
-	z80WriteU8(reg, address);
+	z80WriteU8(z80, reg, address);
 
 	z80->cycles = 13;
 }
 
 void loadHlReg(struct Z80* z80, u8 reg)
 {
-	z80WriteU8(reg, z80->hl.value);
+	z80WriteU8(z80, reg, z80->hl.value);
 	z80->cycles = 7;
 }
 
@@ -622,8 +622,8 @@ void load16Reg(struct Z80* z80, union Register* reg)
 {
 	u16 address = z80FetchU16(z80);
 	
-	u8 lo = z80ReadU8(address);
-	u8 hi = z80ReadU8(address + 1);
+	u8 lo = z80ReadU8(z80, address);
+	u8 hi = z80ReadU8(z80, address + 1);
 	u16 value = ((hi << 8) | lo);
 
 	reg->value = value;
@@ -633,7 +633,7 @@ void load16Reg(struct Z80* z80, union Register* reg)
 void load16A(struct Z80* z80)
 {
 	u16 address = z80FetchU16(z80);
-	u8 value = z80ReadU8(address);
+	u8 value = z80ReadU8(z80, address);
 
 	z80->af.hi = value;
 	z80->cycles = 13;
@@ -716,7 +716,7 @@ void addReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 
 void addMemHl(struct Z80* z80, u8* destReg)
 {
-	u8 value = z80ReadU8(z80->hl.value);
+	u8 value = z80ReadU8(z80, z80->hl.value);
 	addReg8(z80, destReg, value);
 
 	z80->cycles += 3;
@@ -756,9 +756,9 @@ void djnz(struct Z80* z80)
 void rst(struct Z80* z80, u8 vector)
 {
 	z80->sp--;
-	z80WriteU8((z80->pc >> 8) & 0xFF, z80->sp);
+	z80WriteU8(z80, (z80->pc >> 8) & 0xFF, z80->sp);
 	z80->sp--;
-	z80WriteU8((z80->pc & 0xFF), z80->sp);
+	z80WriteU8(z80, (z80->pc & 0xFF), z80->sp);
 
 	z80->pc = vector;
 	z80->cycles = 11;
@@ -768,9 +768,9 @@ void call(struct Z80* z80)
 {
 	u16 address = z80FetchU16(z80);
 	z80->sp--;
-	z80WriteU8((z80->pc >> 8) & 0xFF, z80->sp);
+	z80WriteU8(z80, (z80->pc >> 8) & 0xFF, z80->sp);
 	z80->sp--;
-	z80WriteU8((z80->pc & 0xFF), z80->sp);
+	z80WriteU8(z80, (z80->pc & 0xFF), z80->sp);
 
 	z80->pc = address;
 	z80->cycles = 17;
@@ -789,9 +789,9 @@ void callCond(struct Z80* z80, u8 cond)
 
 void ret(struct Z80* z80)
 {
-	u8 lo = z80ReadU8(z80->sp);
+	u8 lo = z80ReadU8(z80, z80->sp);
 	z80->sp++;
-	u8 hi = z80ReadU8(z80->sp);
+	u8 hi = z80ReadU8(z80, z80->sp);
 	z80->sp++;
 
 	u16 return_address = ((hi << 8) | lo);
@@ -855,7 +855,7 @@ void xor(struct Z80* z80, u8 reg)
 
 void xorMemHl(struct Z80* z80)
 {
-	u8 value = z80ReadU8(z80->hl.value);
+	u8 value = z80ReadU8(z80, z80->hl.value);
 	xor(z80, value);
 
 	z80->cycles += 3;
@@ -876,7 +876,7 @@ void or(struct Z80 * z80, u8 reg)
 
 void orMemHl(struct Z80* z80)
 {
-	u8 value = z80ReadU8(z80->hl.value);
+	u8 value = z80ReadU8(z80, z80->hl.value);
 	or(z80, value);
 
 	z80->cycles += 3;
@@ -898,7 +898,7 @@ void and(struct Z80* z80, u8 reg)
 
 void andMemHl(struct Z80* z80)
 {
-	u8 value = z80ReadU8(z80->hl.value);
+	u8 value = z80ReadU8(z80, z80->hl.value);
 	and(z80, value);
 
 	z80->cycles += 3;
@@ -973,9 +973,9 @@ void exx(struct Z80* z80)
 void push(struct Z80* z80, union Register* reg)
 {
 	z80->sp--;
-	z80WriteU8(reg->hi, z80->sp);
+	z80WriteU8(z80, reg->hi, z80->sp);
 	z80->sp--;
-	z80WriteU8(reg->lo, z80->sp);
+	z80WriteU8(z80, reg->lo, z80->sp);
 
 	z80->cycles = 11;
 	if (reg == &z80->ix || reg == &z80->iy)
@@ -984,9 +984,9 @@ void push(struct Z80* z80, union Register* reg)
 
 void pop(struct Z80* z80, union Register* reg)
 {
-	reg->lo = z80ReadU8(z80->sp);
+	reg->lo = z80ReadU8(z80, z80->sp);
 	z80->sp++;
-	reg->hi = z80ReadU8(z80->sp);
+	reg->hi = z80ReadU8(z80, z80->sp);
 	z80->sp++;
 
 	z80->cycles = 10;
@@ -997,7 +997,7 @@ void pop(struct Z80* z80, union Register* reg)
 void outa(struct Z80* z80)
 {
 	u8 io_port = z80FetchU8(z80);
-	ioWriteU8(ioBus, z80->af.hi, io_port);
+	ioWriteU8(z80->io, z80->af.hi, io_port);
 
 	z80->cycles = 11;
 }
@@ -1011,7 +1011,7 @@ void ina(struct Z80* z80)
 		z80->af.hi = io_port;
 	}
 	else {
-		u8 io_value = ioReadU8(ioBus, io_port);
+		u8 io_value = ioReadU8(z80->io, io_port);
 		z80->af.hi = io_value;
 	}
 
@@ -1020,7 +1020,7 @@ void ina(struct Z80* z80)
 
 void out(struct Z80* z80, u8 destPort, u8 sourceReg)
 {
-	ioWriteU8(ioBus, destPort, sourceReg);
+	ioWriteU8(z80->io, destPort, sourceReg);
 	z80->cycles = 12;
 }
 
@@ -1031,7 +1031,7 @@ void in(struct Z80* z80, u8 sourcePort, u8* destReg, u8 opcode)
 	if (open_bus) {
 		io_value = opcode;
 	}else
-		io_value = ioReadU8(ioBus, sourcePort);
+		io_value = ioReadU8(z80->io, sourcePort);
 
 	if(destReg != NULL)
 		*destReg = io_value;
@@ -1050,9 +1050,9 @@ void otir(struct Z80* z80)
 	
 	if (z80->bc.hi != 0) {
 		//Byte from address hl written to port c
-		u8 value = z80ReadU8(z80->hl.value);
+		u8 value = z80ReadU8(z80, z80->hl.value);
 		u8 io_port = z80->bc.lo;
-		ioWriteU8(ioBus, value, io_port);
+		ioWriteU8(z80->io, value, io_port);
 
 		z80->hl.value++;
 		z80->bc.hi--;
@@ -1073,8 +1073,8 @@ void ldir(struct Z80* z80)
 	if (z80->bc.value != 0) {
 		//Transfers bytes from source address hl to destination 
 		//address de, bc times
-		u8 value = z80ReadU8(z80->hl.value);
-		z80WriteU8(value, z80->de.value);
+		u8 value = z80ReadU8(z80, z80->hl.value);
+		z80WriteU8(z80, value, z80->de.value);
 
 		z80->hl.value++;
 		z80->de.value++;
@@ -1183,7 +1183,7 @@ void bit(struct Z80* z80, u8 reg, u8 bit)
 void bitIx(struct Z80* z80, u8 bit)
 {
 	u8 offset = z80FetchU8(z80);
-	u8 value = z80ReadU8(z80->ix.value + offset);
+	u8 value = z80ReadU8(z80, z80->ix.value + offset);
 
 	z80AffectFlag(z80, testBit(value, bit) == 0, FLAG_Z);
 	z80ClearFlag(z80, FLAG_N);

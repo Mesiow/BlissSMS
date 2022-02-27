@@ -55,21 +55,20 @@ struct Z80 {
 
 	u8 service_nmi;
 	u8 last_daa_operation;
+
+	struct Bus* bus;
+	struct Io* io;
 };
 
-struct Bus* memBus;
-struct Io* ioBus;
-
 void z80Init(struct Z80* z80);
-void z80ConnectBus(struct Bus* bus);
-void z80ConnectIo(struct Io* io);
+void z80ConnectBus(struct Z80 *z80, struct Bus* bus);
+void z80ConnectIo(struct Z80 *z80, struct Io* io);
 void z80AffectFlag(struct Z80* z80, u8 cond, u8 flags);
 void z80SetFlag(struct Z80* z80, u8 flags);
 void z80ClearFlag(struct Z80* z80, u8 flags);
 u8 getFlag(struct Z80* z80, u8 flag);
 
 void z80HandleInterrupts(struct Z80* z80);
-void z80HandleNonMaskableInterrupt(struct Z80* z80);
 
 u8 z80OverflowFromAdd(u8 op1, u8 op2);
 u8 z80OverflowFromSub(u8 op1, u8 op2);
@@ -88,11 +87,11 @@ u8 z80HalfCarryOccured16(u16 op1, u16 op2);
 u8 z80BorrowOccured16(u16 op1, u16 op2);
 u8 z80HalfBorrowOccured16(u16 op1, u16 op2);
 
-void z80WriteU8(u8 value, u16 address);
+void z80WriteU8(struct Z80 *z80, u8 value, u16 address);
 
-u8 z80ReadU8(u16 address);
+u8 z80ReadU8(struct Z80* z80, u16 address);
 u8 z80FetchU8(struct Z80 *z80);
-u16 z80ReadU16(u16 address);
+u16 z80ReadU16(struct Z80* z80, u16 address);
 u16 z80FetchU16(struct Z80* z80);
 u16 z80Clock(struct Z80* z80);
 

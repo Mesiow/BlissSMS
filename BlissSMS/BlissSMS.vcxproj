@@ -152,6 +152,7 @@
     <ClCompile Include="Core\Io.c" />
     <ClCompile Include="Core\System.c" />
     <ClCompile Include="Core\Util.c" />
+    <ClCompile Include="Core\Vdp.c" />
     <ClCompile Include="Core\Z80.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
@@ -161,6 +162,7 @@
     <ClInclude Include="Core\Io.h" />
     <ClInclude Include="Core\System.h" />
     <ClInclude Include="Core\Util.h" />
+    <ClInclude Include="Core\Vdp.h" />
     <ClInclude Include="Core\Z80.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

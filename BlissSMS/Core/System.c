@@ -2,19 +2,23 @@
 
 void systemInit(struct System* sys)
 {
+	//Memory init
 	ioInit(&sys->io);
 	memoryBusInit(&sys->bus);
-	memoryBusLoadBios(&sys->bus, "test_roms/bios13fx.sms");
-	memoryBusConnectIo(&sys->io);
+
+	//Cpu init
+	z80Init(&sys->z80);
+	z80ConnectBus(&sys->z80, &sys->bus);
+	z80ConnectIo(&sys->z80, &sys->io);
+
+	//Vdp init
+	vdpInit(&sys->vdp);
+	vdpConnectIo(&sys->vdp, &sys->io);
 
 	cartInit(&sys->cart);
-	cartLoad(&sys->cart, "test_roms/zexdoc.sms");
+	cartLoad(&sys->cart, "roms/Astro Flash (Japan).sms");
 
 	memoryBusLoadCartridge(&sys->bus, &sys->cart);
-
-	z80Init(&sys->z80);
-	z80ConnectBus(&sys->bus);
-	z80ConnectIo(&sys->io);
 
 	sys->running = 1;
 }

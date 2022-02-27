@@ -2,6 +2,7 @@
 #include "Bus.h"
 #include "Io.h"
 #include "Z80.h"
+#include "Vdp.h"
 #include "Cart.h"
 
 #define CYCLES_PER_SCANLINE 3420
@@ -12,7 +13,9 @@ struct System {
 	struct Bus bus;
 	struct Io io;
 	struct Z80 z80;
+	struct Vdp vdp;
 	struct Cart cart;
+
 	u8 running;
 };
 

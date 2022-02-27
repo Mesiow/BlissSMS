@@ -42,6 +42,12 @@
 #define SYSRAM_START 0xC000
 #define SYSRAM_END 0xDFFF
 
+//Mapping Registers
+#define RAM_MAPPING_REGISTER 0xFFFC
+#define ROM_MAPPING_0 0xFFFD
+#define ROM_MAPPING_1 0xFFFE
+#define ROM_MAPPING_2 0xFFFF
+
 struct Bus {
 	u8 rom[ROM_SIZE];
 	u8 romslot0[ROM_MAPPER_0_SIZE];
@@ -50,11 +56,16 @@ struct Bus {
 	u8 systemRam[SYSRAM_SIZE];
 	u8 bios[SYSRAM_SIZE];
 
-	u8 isBiosMapped;
+	u8 biosEnabled;
+	struct Cart* cart;
 };
 
 void memoryBusInit(struct Bus* bus);
 void memoryBusLoadBios(struct Bus* bus, const char *path);
+void memoryBusLoadCartridge(struct Bus* bus, struct Cart *cart);
 
 void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address);
 u8 memoryBusReadU8(struct Bus* bus, u16 address);
+
+u8 memoryBusReadRamMapper(struct Bus* bus);
+u8 memoryBusReadRomBankRegister(struct Bus* bus, u16 rombank);
