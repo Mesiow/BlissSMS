@@ -364,6 +364,15 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x85: addReg8(z80, &z80->af.hi, z80->hl.lo); break;
 		case 0x86: addMemHl(z80, &z80->af.hi); break;
 
+		//8 bit reg sub
+		case 0x90: subReg8(z80, &z80->af.hi, z80->bc.hi); break;
+		case 0x91: subReg8(z80, &z80->af.hi, z80->bc.lo); break;
+		case 0x92: subReg8(z80, &z80->af.hi, z80->de.hi); break;
+		case 0x93: subReg8(z80, &z80->af.hi, z80->de.lo); break;
+		case 0x94: subReg8(z80, &z80->af.hi, z80->hl.hi); break;
+		case 0x95: subReg8(z80, &z80->af.hi, z80->hl.lo); break;
+		case 0x96: subMemHl(z80, &z80->af.hi); break;
+
 		//Jumps/Branches/Rets
 		case 0x10: djnz(z80); break;
 		case 0x18: jrImm(z80); break;
@@ -758,6 +767,14 @@ void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 	(*destReg) -= sourceReg;
 
 	z80->cycles = 4;
+}
+
+void subMemHl(struct Z80* z80, u8* destReg)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	subReg8(z80, destReg, value);
+
+	z80->cycles += 3;
 }
 
 void jrImm(struct Z80* z80)

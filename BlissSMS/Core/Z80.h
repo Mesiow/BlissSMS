@@ -130,6 +130,7 @@ void addReg8(struct Z80* z80, u8* destReg, u8 sourceReg);
 void addMemHl(struct Z80* z80, u8* destReg);
 
 void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg);
+void subMemHl(struct Z80* z80, u8* destReg);
 
 //Branches/Jumps/Returns
 void jrImm(struct Z80* z80);
