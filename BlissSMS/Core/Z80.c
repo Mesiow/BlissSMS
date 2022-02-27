@@ -204,6 +204,9 @@ u16 z80Clock(struct Z80* z80)
 		if (z80->process_interrupt_delay)
 			z80->process_interrupt_delay = 0;
 
+		if (z80->pc == 0x2778) {
+			printf("menu loop\n");
+		}
 		u8 opcode = z80ReadU8(z80, z80->pc);
 		z80->pc++;
 
@@ -277,10 +280,12 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x76: halt(z80); break;
 		case 0xFE: cp(z80); break;
 		case 0x27: daa(z80); break;
+		case 0x3F: ccf(z80); break;
 
 		//Shifts
 		case 0x07: rlca(z80); break;
 		case 0x0F: rrca(z80); break;
+		case 0x17: rla(z80); break;
 
 		//Exchanges
 		case 0x08: ex(z80, &z80->af, &z80->shadowedregs.af); break;
@@ -1069,6 +1074,24 @@ void rrca(struct Z80* z80)
 	z80->cycles = 4;
 }
 
+void rla(struct Z80* z80)
+{
+	u8 carry = getFlag(z80, FLAG_C);
+	u8 msb = (z80->af.hi >> 7) & 0x1;
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+
+	z80->af.hi <<= 1;
+	z80->af.hi |= carry;
+	if (msb) {
+		z80SetFlag(z80, FLAG_C);
+	}
+	else {
+		z80ClearFlag(z80, FLAG_C);
+	}
+
+	z80->cycles = 4;
+}
+
 void ex(struct Z80* z80, union Register* reg1, union Register* reg2)
 {
 	u16 temp_reg1 = reg1->value;
@@ -1290,6 +1313,14 @@ void daa(struct Z80* z80)
 		z80SetFlag(z80, FLAG_Z);
 
 	z80AffectFlag(z80, z80IsEvenParity(z80->af.hi), FLAG_PV);
+
+	z80->cycles = 4;
+}
+
+void ccf(struct Z80* z80)
+{
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	z80SetFlag(z80, getFlag(z80, FLAG_C) ^ 1);
 
 	z80->cycles = 4;
 }
