@@ -185,6 +185,7 @@ void daa(struct Z80* z80);
 void rrc(struct Z80* z80, u8* reg);
 void rrcMemHl(struct Z80* z80);
 void bit(struct Z80* z80, u8 reg, u8 bit);
+void bitMemHl(struct Z80* z80, u8 bitToTest);
 
 //Ix instructions
 void loadRegIx(struct Z80* z80, u8* reg);

@@ -474,7 +474,75 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 
 		//Bit
 		case 0x40: bit(z80, z80->bc.hi, 0); break;
+		case 0x41: bit(z80, z80->bc.lo, 0); break;
+		case 0x42: bit(z80, z80->de.hi, 0); break;
+		case 0x43: bit(z80, z80->de.lo, 0); break;
+		case 0x44: bit(z80, z80->hl.hi, 0); break;
+		case 0x45: bit(z80, z80->hl.lo, 0); break;
+		case 0x46: bitMemHl(z80, 0); break;
+		case 0x47: bit(z80, z80->af.hi, 0); break;
+		
+		case 0x48: bit(z80, z80->bc.hi, 1); break;
+		case 0x49: bit(z80, z80->bc.lo, 1); break;
+		case 0x4A: bit(z80, z80->de.hi, 1); break;
+		case 0x4B: bit(z80, z80->de.lo, 1); break;
+		case 0x4C: bit(z80, z80->hl.hi, 1); break;
+		case 0x4D: bit(z80, z80->hl.lo, 1); break;
+		case 0x4E: bitMemHl(z80, 1); break;
+		case 0x4F: bit(z80, z80->af.hi, 1); break;
+
+		case 0x50: bit(z80, z80->bc.hi, 2); break;
+		case 0x51: bit(z80, z80->bc.lo, 2); break;
+		case 0x52: bit(z80, z80->de.hi, 2); break;
+		case 0x53: bit(z80, z80->de.lo, 2); break;
+		case 0x54: bit(z80, z80->hl.hi, 2); break;
+		case 0x55: bit(z80, z80->hl.lo, 2); break;
+		case 0x56: bitMemHl(z80, 2); break;
+		case 0x57: bit(z80, z80->af.hi, 2); break;
+
+		case 0x58: bit(z80, z80->bc.hi, 3); break;
+		case 0x59: bit(z80, z80->bc.lo, 3); break;
+		case 0x5A: bit(z80, z80->de.hi, 3); break;
+		case 0x5B: bit(z80, z80->de.lo, 3); break;
+		case 0x5C: bit(z80, z80->hl.hi, 3); break;
+		case 0x5D: bit(z80, z80->hl.lo, 3); break;
+		case 0x5E: bitMemHl(z80, 3); break;
+		case 0x5F: bit(z80, z80->af.hi, 3); break;
+
+		case 0x60: bit(z80, z80->bc.hi, 4); break;
+		case 0x61: bit(z80, z80->bc.lo, 4); break;
+		case 0x62: bit(z80, z80->de.hi, 4); break;
+		case 0x63: bit(z80, z80->de.lo, 4); break;
+		case 0x64: bit(z80, z80->hl.hi, 4); break;
+		case 0x65: bit(z80, z80->hl.lo, 4); break;
+		case 0x66: bitMemHl(z80, 4); break;
+		case 0x67: bit(z80, z80->af.hi, 4); break;
+
+		case 0x68: bit(z80, z80->bc.hi, 5); break;
+		case 0x69: bit(z80, z80->bc.lo, 5); break;
+		case 0x6A: bit(z80, z80->de.hi, 5); break;
+		case 0x6B: bit(z80, z80->de.lo, 5); break;
+		case 0x6C: bit(z80, z80->hl.hi, 5); break;
+		case 0x6D: bit(z80, z80->hl.lo, 5); break;
+		case 0x6E: bitMemHl(z80, 5); break;
 		case 0x6F: bit(z80, z80->af.hi, 5); break;
+
+		case 0x70: bit(z80, z80->bc.hi, 6); break;
+		case 0x71: bit(z80, z80->bc.lo, 6); break;
+		case 0x72: bit(z80, z80->de.hi, 6); break;
+		case 0x73: bit(z80, z80->de.lo, 6); break;
+		case 0x74: bit(z80, z80->hl.hi, 6); break;
+		case 0x75: bit(z80, z80->hl.lo, 6); break;
+		case 0x76: bitMemHl(z80, 6); break;
+		case 0x77: bit(z80, z80->af.hi, 6); break;
+
+		case 0x78: bit(z80, z80->bc.hi, 7); break;
+		case 0x79: bit(z80, z80->bc.lo, 7); break;
+		case 0x7A: bit(z80, z80->de.hi, 7); break;
+		case 0x7B: bit(z80, z80->de.lo, 7); break;
+		case 0x7C: bit(z80, z80->hl.hi, 7); break;
+		case 0x7D: bit(z80, z80->hl.lo, 7); break;
+		case 0x7E: bitMemHl(z80, 7); break;
 		case 0x7F: bit(z80, z80->af.hi, 7); break;
 
 		default:
@@ -1268,6 +1336,14 @@ void bit(struct Z80* z80, u8 reg, u8 bit)
 	z80SetFlag(z80, FLAG_H);
 
 	z80->cycles = 8;
+}
+
+void bitMemHl(struct Z80* z80, u8 bitToTest)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	bit(z80, value, bitToTest);
+
+	z80->cycles += 4;
 }
 
 void loadRegIx(struct Z80* z80, u8* reg)
