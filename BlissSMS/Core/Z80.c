@@ -959,8 +959,10 @@ void jpCond(struct Z80* z80, u8 cond)
 	if (cond) {
 		jp(z80);
 	}
-	else
+	else {
+		z80->pc += 2;
 		z80->cycles = 10;
+	}
 }
 
 void xor(struct Z80* z80, u8 reg)
