@@ -352,6 +352,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x1D: decReg8(z80, &z80->de.lo); break;
 		case 0x04: incReg8(z80, &z80->bc.hi); break;
 		case 0x14: incReg8(z80, &z80->de.hi); break;
+		case 0x2C: incReg8(z80, &z80->hl.lo); break;
 		case 0x3C: incReg8(z80, &z80->af.hi); break;
 
 		//8 bit reg add
@@ -407,6 +408,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xDC: callCond(z80, getFlag(z80, FLAG_C)); break;
 
 		case 0xC9: ret(z80); break;
+		case 0xD0: retCond(z80, getFlag(z80, FLAG_C) == 0); break;
 
 		//Jumps
 		case 0xC2: jpCond(z80, getFlag(z80, FLAG_Z) == 0); break;
@@ -452,6 +454,15 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 void executeBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		//rrc
+		case 0x08: rrc(z80, &z80->bc.hi); break;
+		case 0x09: rrc(z80, &z80->bc.lo); break;
+		case 0x0A: rrc(z80, &z80->de.hi); break;
+		case 0x0B: rrc(z80, &z80->de.lo); break;
+		case 0x0C: rrc(z80, &z80->hl.hi); break;
+		case 0x0D: rrc(z80, &z80->hl.lo); break;
+		case 0x0E: rrcMemHl(z80); break;
+
 		//Bit
 		case 0x6F: bit(z80, z80->af.hi, 5); break;
 		case 0x7F: bit(z80, z80->af.hi, 7); break;
@@ -1167,6 +1178,41 @@ void daa(struct Z80* z80)
 	z80AffectFlag(z80, z80IsEvenParity(z80->af.hi), FLAG_PV);
 
 	z80->cycles = 4;
+}
+
+void rrc(struct Z80* z80, u8* reg)
+{
+	u8 reg_value = (*reg);
+	u8 lsb = (reg_value & 0x1);
+
+	reg_value >>= 1;
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	if (lsb) {
+		z80SetFlag(z80, FLAG_C);
+		reg_value = setBit(reg_value, 7);
+	}
+	else {
+		z80ClearFlag(z80, FLAG_C);
+		reg_value = clearBit(reg_value, 7);
+	}
+	(*reg) = reg_value;
+
+	z80AffectFlag(z80, z80IsSigned(reg_value), FLAG_S);
+	z80AffectFlag(z80, reg_value == 0, FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(reg_value), FLAG_PV);
+
+	z80->cycles = 8;
+}
+
+void rrcMemHl(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	rrc(z80, &value);
+
+	z80WriteU8(z80, value, z80->hl.value);
+
+	z80->cycles = 15;
 }
 
 void bit(struct Z80* z80, u8 reg, u8 bit)

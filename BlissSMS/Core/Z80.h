@@ -179,6 +179,8 @@ void cp(struct Z80* z80);
 void daa(struct Z80* z80);
 
 //Bit instructions
+void rrc(struct Z80* z80, u8* reg);
+void rrcMemHl(struct Z80* z80);
 void bit(struct Z80* z80, u8 reg, u8 bit);
 
 //Bit ix instructions
