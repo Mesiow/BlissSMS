@@ -133,7 +133,7 @@ u8 z80CarryOccured8(u8 op1, u8 op2)
 
 u8 z80HalfCarryOccured8(u8 op1, u8 op2)
 {
-	return ((op1 & 0xF) + (op2 & 0xF) > 0xF);
+	return (((op1 & 0xF) + (op2 & 0xF)) > 0xF);
 }
 
 u8 z80BorrowOccured8(u8 op1, u8 op2)
@@ -464,8 +464,10 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 		case 0x0E: rrcMemHl(z80); break;
 
 		//Bit
+		case 0x40: bit(z80, z80->bc.hi, 0); break;
 		case 0x6F: bit(z80, z80->af.hi, 5); break;
 		case 0x7F: bit(z80, z80->af.hi, 7); break;
+
 		default:
 			printf("--Unimplemented Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
@@ -720,8 +722,8 @@ void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceRe
 
 void addReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 {
-	u8 result = (*destReg) + sourceReg;
 	u8 dest_reg = (*destReg);
+	u8 result = dest_reg + sourceReg;
 
 	z80ClearFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
@@ -740,6 +742,22 @@ void addMemHl(struct Z80* z80, u8* destReg)
 	addReg8(z80, destReg, value);
 
 	z80->cycles += 3;
+}
+
+void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
+{
+	u8 dest_reg = (*destReg);
+	u8 result = dest_reg - sourceReg;
+
+	z80SetFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(dest_reg, sourceReg), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromSub(dest_reg, sourceReg), FLAG_PV);
+	z80AffectFlag(z80, z80BorrowOccured8(dest_reg, sourceReg), FLAG_C);
+
+	(*destReg) -= sourceReg;
+
+	z80->cycles = 4;
 }
 
 void jrImm(struct Z80* z80)

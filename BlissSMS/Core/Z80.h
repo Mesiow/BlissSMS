@@ -129,6 +129,8 @@ void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceRe
 void addReg8(struct Z80* z80, u8* destReg, u8 sourceReg);
 void addMemHl(struct Z80* z80, u8* destReg);
 
+void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg);
+
 //Branches/Jumps/Returns
 void jrImm(struct Z80* z80);
 void jrImmCond(struct Z80* z80, u8 cond);
