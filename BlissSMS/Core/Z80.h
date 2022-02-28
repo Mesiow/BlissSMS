@@ -191,6 +191,7 @@ void bitMemHl(struct Z80* z80, u8 bitToTest);
 
 //Ix instructions
 void loadRegIx(struct Z80* z80, u8* reg);
+void loadIxReg(struct Z80* z80, u8 reg);
 
 //Bit ix instructions
 void bitIx(struct Z80* z80, u8 bit);
