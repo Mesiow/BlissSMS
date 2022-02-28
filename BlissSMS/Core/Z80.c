@@ -293,6 +293,11 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xD9: exx(z80); break;
 
 		//Loads
+
+		//Register pointer loads
+		case 0x0A: loadRegMem(z80, &z80->af.hi, &z80->bc); break;
+		case 0x1A: loadRegMem(z80, &z80->af.hi, &z80->de); break;
+
 		case 0x22: loadMemReg16(z80, &z80->hl); break;
 		case 0x32: loadMemReg8(z80, z80->af.hi); break;
 
@@ -758,6 +763,16 @@ void loadReg(struct Z80* z80, u8* destReg, u8 sourceReg)
 {
 	*destReg = sourceReg;
 	z80->cycles = 4;
+}
+
+void loadRegMem(struct Z80* z80, u8* destReg, union Register* reg)
+{
+	u16 address = reg->value;
+	u8 value = z80ReadU8(z80, address);
+
+	*destReg = value;
+
+	z80->cycles = 7;
 }
 
 void incReg16(struct Z80* z80, union Register* reg)
