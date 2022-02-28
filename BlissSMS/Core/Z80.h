@@ -12,6 +12,7 @@
 #define NMI_VECTOR 0x66
 #define INT_VECTOR 0x38
 
+static int debug = 0;
 
 union Register{
 	struct {
@@ -112,7 +113,7 @@ void loadReg16(struct Z80* z80, union Register *reg);
 void loadReg8(struct Z80* z80, u8 *reg);
 void loadHL8(struct Z80* z80);
 void loadAReg(struct Z80* z80, u8 reg);
-void loadRegHL(struct Z80* z80, u8* reg);
+void loadRegHl(struct Z80* z80, u8* reg);
 void loadMemReg16(struct Z80* z80, union Register *reg);
 void loadMemReg8(struct Z80* z80, u8 reg);
 void loadHlReg(struct Z80* z80, u8 reg);
@@ -125,6 +126,8 @@ void loadRegMem(struct Z80* z80, u8* destReg, union Register* reg);
 void incReg16(struct Z80* z80, union Register* reg);
 void decReg16(struct Z80* z80, union Register* reg);
 void decReg8(struct Z80* z80, u8* reg);
+void decMemHl(struct Z80* z80);
+
 void incReg8(struct Z80* z80, u8* reg);
 void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg);
 void addReg8(struct Z80* z80, u8* destReg, u8 sourceReg);
@@ -194,6 +197,8 @@ void bitMemHl(struct Z80* z80, u8 bitToTest);
 void loadRegIx(struct Z80* z80, u8* reg);
 void loadIxReg(struct Z80* z80, u8 reg);
 void loadIxImm(struct Z80* z80);
+
+void decMemIx(struct Z80* z80);
 
 //Bit ix instructions
 void bitIx(struct Z80* z80, u8 bit);

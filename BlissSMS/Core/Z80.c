@@ -79,7 +79,7 @@ void z80HandleInterrupts(struct Z80* z80)
 	}
 
 	u8 requestingInterrupts = 0;
-	if (requestingInterrupts) { //if vdp is requesting interrupts
+	//if (requestingInterrupts) { //if vdp is requesting interrupts
 		//Maskable interrupts enabled
 		if (z80->iff1) {
 			if (z80->interrupt_mode == One) {
@@ -95,7 +95,7 @@ void z80HandleInterrupts(struct Z80* z80)
 				z80->pc = INT_VECTOR;
 			}
 		}
-	}
+	//}
 }
 
 u8 z80OverflowFromAdd(u8 op1, u8 op2)
@@ -204,11 +204,21 @@ u16 z80Clock(struct Z80* z80)
 		if (z80->process_interrupt_delay)
 			z80->process_interrupt_delay = 0;
 
-		if (z80->pc == 0x2778) {
+		/*if (z80->pc == 0x2778) {
 			printf("menu loop\n");
-		}
+		}*/
+		
 		u8 opcode = z80ReadU8(z80, z80->pc);
 		z80->pc++;
+
+		if (z80->pc == 0x182C) {
+			printf("hit 182C\n");
+			debug = 1;
+		}
+		if (debug) {
+			
+		}
+		printf("pc: 0x%04X\n", z80->pc);
 
 		executeInstruction(z80, opcode);
 	}
@@ -329,13 +339,13 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x7C: loadAReg(z80, z80->hl.hi); break;
 		case 0x7D: loadAReg(z80, z80->hl.lo); break;
 
-		case 0x46: loadRegHL(z80, &z80->bc.hi); break;
-		case 0x4E: loadRegHL(z80, &z80->bc.lo); break;
-		case 0x56: loadRegHL(z80, &z80->de.hi); break;
-		case 0x5E: loadRegHL(z80, &z80->de.lo); break;
-		case 0x66: loadRegHL(z80, &z80->hl.hi); break;
-		case 0x6E: loadRegHL(z80, &z80->hl.lo); break;
-		case 0x7E: loadRegHL(z80, &z80->af.hi); break;
+		case 0x46: loadRegHl(z80, &z80->bc.hi); break;
+		case 0x4E: loadRegHl(z80, &z80->bc.lo); break;
+		case 0x56: loadRegHl(z80, &z80->de.hi); break;
+		case 0x5E: loadRegHl(z80, &z80->de.lo); break;
+		case 0x66: loadRegHl(z80, &z80->hl.hi); break;
+		case 0x6E: loadRegHl(z80, &z80->hl.lo); break;
+		case 0x7E: loadRegHl(z80, &z80->af.hi); break;
 
 		case 0x70: loadHlReg(z80, z80->bc.hi); break;
 		case 0x71: loadHlReg(z80, z80->bc.lo); break;
@@ -360,8 +370,13 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x05: decReg8(z80, &z80->bc.hi); break;
 		case 0x25: decReg8(z80, &z80->hl.hi); break;
 		case 0x1D: decReg8(z80, &z80->de.lo); break;
+		case 0x35: decMemHl(z80); break;
+
 		case 0x04: incReg8(z80, &z80->bc.hi); break;
+		case 0x0C: incReg8(z80, &z80->bc.lo); break;
 		case 0x14: incReg8(z80, &z80->de.hi); break;
+		case 0x1C: incReg8(z80, &z80->de.lo); break;
+		case 0x24: incReg8(z80, &z80->hl.hi); break;
 		case 0x2C: incReg8(z80, &z80->hl.lo); break;
 		case 0x3C: incReg8(z80, &z80->af.hi); break;
 
@@ -567,11 +582,13 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 void executeIxInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
-		//Adds
+		//Arithmetic
 		case 0x09: addReg16(z80, &z80->ix, &z80->bc); break;
 		case 0x19: addReg16(z80, &z80->ix, &z80->de); break;
 		case 0x29: addReg16(z80, &z80->ix, &z80->ix); break;
 		case 0x39: addReg16(z80, &z80->ix, &z80->sp); break;
+
+		case 0x35: decMemIx(z80); break;
 
 		//Load value from ix + offset into reg8
 		case 0x46: loadRegIx(z80, &z80->bc.hi); break;
@@ -709,7 +726,7 @@ void loadAReg(struct Z80* z80, u8 reg)
 	z80->cycles = 4;
 }
 
-void loadRegHL(struct Z80* z80, u8* reg)
+void loadRegHl(struct Z80* z80, u8* reg)
 {
 	*reg = z80ReadU8(z80, z80->hl.value);
 	z80->cycles = 7;
@@ -799,6 +816,16 @@ void decReg8(struct Z80* z80, u8* reg)
 
 	(*reg)--;
 	z80->cycles = 4;
+}
+
+void decMemHl(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	decReg8(z80, &value);
+
+	z80WriteU8(z80, value, z80->hl.value);
+
+	z80->cycles += 7;
 }
 
 void incReg8(struct Z80* z80, u8* reg)
@@ -1438,6 +1465,19 @@ void loadIxImm(struct Z80* z80)
 	z80WriteU8(z80, imm_value, address);
 
 	z80->cycles = 19;
+}
+
+void decMemIx(struct Z80* z80)
+{
+	u8 offset = z80FetchU8(z80);
+	u16 address = z80->ix.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	decReg8(z80, &value);
+
+	z80WriteU8(z80, value, address);
+
+	z80->cycles += 19;
 }
 
 void bitIx(struct Z80* z80, u8 bit)
