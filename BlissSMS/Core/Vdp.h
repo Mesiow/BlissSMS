@@ -14,14 +14,26 @@
 	$0000-------------------------------------------------------------- -
 */
 
+enum VdpDisplayState {
+	Visible = 0,
+	HBlank,
+	VBlank
+};
+
 struct Vdp {
 	u8 tilePatterns0[0x2000];
 	u8 tilePatterns1[0x1800];
 	u8 screenDisplay[0x700];
 	u8 spriteInfo[0x100];
 
+	enum VdpDisplayState state;
+	u16 cycles;
+
 	struct Io* io;
 };
 
 void vdpInit(struct Vdp* vdp);
 void vdpConnectIo(struct Vdp *vdp, struct Io* io);
+void vdpUpdate(struct Vdp *vdp, s32 cycles);
+
+u8 vdpPendingInterrupts(struct Vdp *vdp);
