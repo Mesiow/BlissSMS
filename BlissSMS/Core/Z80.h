@@ -69,7 +69,7 @@ void z80SetFlag(struct Z80* z80, u8 flags);
 void z80ClearFlag(struct Z80* z80, u8 flags);
 u8 getFlag(struct Z80* z80, u8 flag);
 
-void z80HandleInterrupts(struct Z80* z80);
+void z80HandleInterrupts(struct Z80* z80, struct Vdp *vdp);
 
 u8 z80OverflowFromAdd(u8 op1, u8 op2);
 u8 z80OverflowFromSub(u8 op1, u8 op2);

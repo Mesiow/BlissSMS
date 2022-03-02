@@ -1,6 +1,7 @@
 #include "Z80.h"
 #include "Bus.h"
 #include "Io.h"
+#include "Vdp.h"
 
 
 void z80Init(struct Z80* z80)
@@ -66,7 +67,7 @@ u8 getFlag(struct Z80* z80, u8 flag)
 	return (mask ? 1 : 0);
 }
 
-void z80HandleInterrupts(struct Z80* z80)
+void z80HandleInterrupts(struct Z80* z80, struct Vdp *vdp)
 {
 	//nmi has priority over maskable irqs
 	if (z80->service_nmi) {
@@ -75,27 +76,20 @@ void z80HandleInterrupts(struct Z80* z80)
 
 		z80->iff2 = z80->iff1;
 		z80->iff1 = 0;
-		z80->pc = NMI_VECTOR;
+		rst(z80, NMI_VECTOR);
 	}
 
-	u8 requestingInterrupts = 0;
-	//if (requestingInterrupts) { //if vdp is requesting interrupts
+	if (vdpPendingInterrupts(vdp)) {
 		//Maskable interrupts enabled
 		if (z80->iff1) {
 			if (z80->interrupt_mode == One) {
-				z80->halted = 0;
-				//Save current pc to the stack
-				z80->sp--;
-				z80WriteU8(z80, (z80->pc >> 8) & 0xFF, z80->sp);
-				z80->sp--;
-				z80WriteU8(z80, z80->pc & 0xFF, z80->sp);
-
 				//disable interrupts and jump to routine
 				z80->iff1 = z80->iff2 = 0;
-				z80->pc = INT_VECTOR;
+				z80->halted = 0;
+				rst(z80, INT_VECTOR);
 			}
 		}
-	//}
+	}
 }
 
 u8 z80OverflowFromAdd(u8 op1, u8 op2)
@@ -211,14 +205,13 @@ u16 z80Clock(struct Z80* z80)
 		u8 opcode = z80ReadU8(z80, z80->pc);
 		z80->pc++;
 
-		if (z80->pc == 0x182C) {
-			printf("hit 182C\n");
+		if (z80->pc == 0x182E) {
+			printf("hit 182E\n");
 			debug = 1;
 		}
 		if (debug) {
-			
+			printf("pc: 0x%04X\n", z80->pc);
 		}
-		printf("pc: 0x%04X\n", z80->pc);
 
 		executeInstruction(z80, opcode);
 	}
@@ -668,6 +661,8 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 
 		case 0xB0: ldir(z80); break;
 		case 0xB3: otir(z80); break;
+
+		case 0x5F: printf("hello\n"); break;
 
 		default:
 			printf("--Unimplemented Extended Instruction--: 0x%02X\n", opcode);
