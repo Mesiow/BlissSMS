@@ -44,8 +44,13 @@ u8 ioReadU8(struct Io* io, u8 address)
 	else if (address >= 0x80 && address <= 0xBF) {
 		if (even_address)
 			return io->vdpData;
-		else
-			return io->vdpControl;
+		else {
+			u8 vdp_ctrl = io->vdpControl;
+
+			//vdp control cleared when reading
+			io->vdpControl = 0;
+			return vdp_ctrl;
+		}
 	}
 	else if (address >= 0xC0 && address <= 0xFF) {
 		if (even_address)
