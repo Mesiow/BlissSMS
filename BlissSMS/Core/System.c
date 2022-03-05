@@ -26,10 +26,10 @@ void systemInit(struct System* sys)
 
 void systemRunEmulation(struct System* sys)
 {
-	struct Vdp* vdp = &sys->vdp;
-	struct Z80* z80 = &sys->z80;
-
 	if (sys->running) {
+		struct Vdp* vdp = &sys->vdp;
+		struct Z80* z80 = &sys->z80;
+
 		s32 cycles_this_frame = 0;
 		while (cycles_this_frame < MAX_CYCLES_PER_FRAME) {
 			u16 cycles = z80Clock(z80);

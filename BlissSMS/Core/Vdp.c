@@ -90,9 +90,25 @@ void vdpWriteControlPort(struct Vdp* vdp, u8 value)
 				else
 					vdp->vdpControl++;
 
-			}break;
+				vdp->writes_to_vram = 1;
+
+			}
+			break;
 			case 1: vdp->writes_to_vram = 1; break;
-			case 2: /*vdp register write*/ break;
+			case 2: { 
+				/*vdp register write*/
+
+				//First byte written holds the data
+				//Second byte written holds the register index/number
+				u8 data = vdp->vdpControl & 0xFF;
+				u8 register_number = value & 0xF;
+
+				if(register_number < 0xB)
+					vdp->registers[register_number] = data;
+
+				vdp->writes_to_vram = 1;
+			} 
+			break;
 			case 3: vdp->writes_to_vram = 0; break;
 		}
 	}

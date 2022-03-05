@@ -35,6 +35,7 @@ struct Vdp {
 	//Internal vdp registers
 	u8 registers[0xB];
 	u16 cycles;
+	u8 line_int_pending;
 
 	//Vdp Ports
 	u16 vdpControl;
