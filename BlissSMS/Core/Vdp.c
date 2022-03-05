@@ -9,8 +9,8 @@ void vdpInit(struct Vdp* vdp)
 
 	vdp->state = Visible;
 	vdp->cycles = 0;
-	vdp->frame_int_enable = 0;
 	vdp->mode = Mode4;
+	vdp->line_int_pending = 0;
 
 	vdp->vdpControl = 0x0;
 	vdp->vdpData = 0x0;
@@ -111,7 +111,10 @@ void vdpWriteDataPort(struct Vdp* vdp, u8 value)
 
 u8 vdpReadControlPort(struct Vdp* vdp)
 {
-	return 0;
+	u8 status_flags = vdp->status_flags;
+	for (s32 i = 5; i <= 7; i++) vdp->status_flags = clearBit(vdp->status_flags, i);
+
+	return status_flags;
 }
 
 u8 vdpReadDataPort(struct Vdp* vdp)
@@ -122,25 +125,35 @@ u8 vdpReadDataPort(struct Vdp* vdp)
 u8 vdpPendingInterrupts(struct Vdp* vdp)
 {
 	//Check for vblank interrupt
-	vdp->frame_int_enable = testBit(vdp->registers[1], 5);
-	if (vdp->frame_int_enable && vdpFrameInterruptPending(vdp))
+	if (vdpCheckFrameInterruptEnable(vdp) && vdpVBlankIrqPending(vdp))
 		return 1;
 
 	//Check for line interrupt
-	if (vdpLineInterruptEnable(vdp) && vdp->io->hcounter < 0)
+	if (vdpLineInterruptEnable(vdp) && vdpLineInterruptPending(vdp))
 		return 1;
 
 	return 0;
 }
 
-u8 vdpFrameInterruptPending(struct Vdp* vdp)
+u8 vdpCheckFrameInterruptEnable(struct Vdp* vdp)
 {
-	u8 frame_int = testBit(vdp->vdpControl, 7);
-	return frame_int;
+	u8 frame_int_enable = testBit(vdp->registers[1], 5);
+	return frame_int_enable;
+}
+
+u8 vdpVBlankIrqPending(struct Vdp* vdp)
+{
+	u8 frame_int_pending = testBit(vdp->status_flags, 7);
+	return frame_int_pending;
 }
 
 u8 vdpLineInterruptEnable(struct Vdp* vdp)
 {
-	u8 line_int = testBit(vdp->registers[0], 4);
-	return line_int;
+	u8 line_int_enable = testBit(vdp->registers[0], 4);
+	return line_int_enable;
+}
+
+u8 vdpLineInterruptPending(struct Vdp* vdp)
+{
+	return vdp->line_int_pending;
 }

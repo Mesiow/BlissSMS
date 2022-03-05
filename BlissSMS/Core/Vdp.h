@@ -35,13 +35,13 @@ struct Vdp {
 	//Internal vdp registers
 	u8 registers[0xB];
 	u16 cycles;
-	u8 frame_int_enable;
 
 	//Vdp Ports
 	u16 vdpControl;
 	u16 vdpData;
 
 	//Flags
+	u8 status_flags; //holds frame interrupt pending flag, sprite overflow flag and sprite collision flag
 	u8 second_control_write;
 	u8 writes_to_vram; //if == 1: writes to data port go to vram,
 					  //otherwise writes go to cram
@@ -64,7 +64,11 @@ u8 vdpReadControlPort(struct Vdp* vdp);
 u8 vdpReadDataPort(struct Vdp* vdp); 
 
 
-
 u8 vdpPendingInterrupts(struct Vdp *vdp);
-u8 vdpFrameInterruptPending(struct Vdp* vdp);
+//Frame interrupt
+u8 vdpCheckFrameInterruptEnable(struct Vdp* vdp);
+u8 vdpVBlankIrqPending(struct Vdp* vdp);
+
+//Line interrupt
 u8 vdpLineInterruptEnable(struct Vdp* vdp);
+u8 vdpLineInterruptPending(struct Vdp* vdp);
