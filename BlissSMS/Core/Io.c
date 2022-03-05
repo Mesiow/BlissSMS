@@ -1,4 +1,5 @@
 #include "Io.h"
+#include "Vdp.h"
 
 void ioInit(struct Io* io)
 {
@@ -6,10 +7,13 @@ void ioInit(struct Io* io)
 	io->ioControl = 0x0;
 	io->vcounter = 0x0;
 	io->hcounter = 0x0;
-	io->vdpData = 0x0;
-	io->vdpControl = 0x0;
 	io->ioAB = 0x0;
 	io->ioBMisc = 0x0;
+}
+
+void ioConnectVdp(struct Io* io, struct Vdp* vdp)
+{
+	io->vdp = vdp;
 }
 
 void ioWriteU8(struct Io* io, u8 value, u8 address)
@@ -26,9 +30,9 @@ void ioWriteU8(struct Io* io, u8 value, u8 address)
 	}
 	else if (address >= 0x80 && address <= 0xBF) {
 		if (even_address)
-			io->vdpData = value;
+			vdpWriteDataPort(io->vdp, value);
 		else
-			io->vdpControl = value;
+			vdpWriteControlPort(io->vdp, value);
 	}
 }
 
@@ -43,14 +47,9 @@ u8 ioReadU8(struct Io* io, u8 address)
 	}
 	else if (address >= 0x80 && address <= 0xBF) {
 		if (even_address)
-			return io->vdpData;
-		else {
-			u8 vdp_ctrl = io->vdpControl;
-
-			//vdp control cleared when reading
-			io->vdpControl = 0;
-			return vdp_ctrl;
-		}
+			return vdpReadDataPort(io->vdp);
+		else
+			return vdpReadControlPort(io->vdp);
 	}
 	else if (address >= 0xC0 && address <= 0xFF) {
 		if (even_address)

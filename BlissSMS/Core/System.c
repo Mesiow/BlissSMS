@@ -14,6 +14,7 @@ void systemInit(struct System* sys)
 	//Vdp init
 	vdpInit(&sys->vdp);
 	vdpConnectIo(&sys->vdp, &sys->io);
+	ioConnectVdp(&sys->io, &sys->vdp);
 
 	cartInit(&sys->cart);
 	cartLoad(&sys->cart, "roms/Astro Flash (Japan).sms");
