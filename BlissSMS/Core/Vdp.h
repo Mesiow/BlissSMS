@@ -20,14 +20,32 @@ enum VdpDisplayState {
 	VBlank
 };
 
+enum VdpDisplayMode {
+	Mode4,
+	Mode2
+};
+
 struct Vdp {
-	u8 tilePatterns0[0x2000];
-	u8 tilePatterns1[0x1800];
-	u8 screenDisplay[0x700];
-	u8 spriteInfo[0x100];
+	u8 vram[0x4000];
+	u8 cram[0x20];
 
 	enum VdpDisplayState state;
+	enum vdpDisplayMode mode;
+
+	//Internal vdp registers
+	u8 registers[0xB];
 	u16 cycles;
+	u8 frame_int_enable;
+
+	//Vdp Ports
+	u16 vdpControl;
+	u16 vdpData;
+
+	//Flags
+	u8 second_control_write;
+	u8 writes_to_vram; //if == 1: writes to data port go to vram,
+					  //otherwise writes go to cram
+	u8 readbuffer;
 
 	struct Io* io;
 };
@@ -35,5 +53,18 @@ struct Vdp {
 void vdpInit(struct Vdp* vdp);
 void vdpConnectIo(struct Vdp *vdp, struct Io* io);
 void vdpUpdate(struct Vdp *vdp, s32 cycles);
+void vdpRender(struct Vdp* vdp);
+void vdpRenderBackground(struct Vdp* vdp);
+void vdpRenderSprites(struct Vdp* vdp);
+void vdpSetMode(struct Vdp* vdp);
+
+void vdpWriteControlPort(struct Vdp* vdp, u8 value);
+void vdpWriteDataPort(struct Vdp* vdp, u8 value);
+u8 vdpReadControlPort(struct Vdp* vdp);
+u8 vdpReadDataPort(struct Vdp* vdp); 
+
+
 
 u8 vdpPendingInterrupts(struct Vdp *vdp);
+u8 vdpFrameInterruptPending(struct Vdp* vdp);
+u8 vdpLineInterruptEnable(struct Vdp* vdp);
