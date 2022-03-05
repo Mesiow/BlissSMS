@@ -64,6 +64,10 @@ void vdpWriteDataPort(struct Vdp* vdp, u8 value);
 u8 vdpReadControlPort(struct Vdp* vdp);
 u8 vdpReadDataPort(struct Vdp* vdp); 
 
+void vdpIncrementAddressRegister(struct Vdp* vdp);
+u8 vdpGetCodeRegister(struct Vdp* vdp); 
+u16 vdpGetAddressRegister(struct Vdp* vdp);
+
 
 u8 vdpPendingInterrupts(struct Vdp *vdp);
 //Frame interrupt

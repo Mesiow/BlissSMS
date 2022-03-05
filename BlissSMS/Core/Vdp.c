@@ -78,20 +78,14 @@ void vdpWriteControlPort(struct Vdp* vdp, u8 value)
 		vdp->vdpControl |= (value << 8);
 
 		//Code register
-		u8 code_reg = (vdp->vdpControl >> 14) & 0x3;
+		u8 code_reg = vdpGetCodeRegister(vdp);
 		switch (code_reg) {
 			case 0: {
-				u16 address_reg = (vdp->vdpControl) & 0x3FFF;
+				u16 address_reg = vdpGetAddressRegister(vdp);
 				vdp->readbuffer = vdp->vram[address_reg];
 
-				//increment address register
-				if (address_reg == 0x3FFF) //overflow to 0
-					vdp->vdpControl &= 0xC000; //keep code register unchanged
-				else
-					vdp->vdpControl++;
-
+				vdpIncrementAddressRegister(vdp);
 				vdp->writes_to_vram = 1;
-
 			}
 			break;
 			case 1: vdp->writes_to_vram = 1; break;
@@ -122,20 +116,71 @@ void vdpWriteControlPort(struct Vdp* vdp, u8 value)
 
 void vdpWriteDataPort(struct Vdp* vdp, u8 value)
 {
+	vdp->second_control_write = 0;
 
+	if (vdp->writes_to_vram) {
+		u16 address_reg = vdpGetAddressRegister(vdp);
+		vdp->vram[address_reg] = value;
+
+		vdpIncrementAddressRegister(vdp);
+	}
+	else { //write to cram
+		u16 address_reg = vdpGetAddressRegister(vdp);
+		//cram is only 32 bytes
+		address_reg &= 0x1F;
+		vdp->cram[address_reg] = value;
+
+		vdpIncrementAddressRegister(vdp);
+	}
+
+	vdp->readbuffer = value;
 }
 
 u8 vdpReadControlPort(struct Vdp* vdp)
 {
+	vdp->second_control_write = 0;
+
 	u8 status_flags = vdp->status_flags;
-	for (s32 i = 5; i <= 7; i++) vdp->status_flags = clearBit(vdp->status_flags, i);
+	vdp->status_flags = 0;
 
 	return status_flags;
 }
 
 u8 vdpReadDataPort(struct Vdp* vdp)
 {
-	return 0;
+	vdp->second_control_write = 0;
+
+	u16 address_reg = vdpGetAddressRegister(vdp);
+	u8 buffer = vdp->readbuffer;
+
+	//vram is buffered on every data port read regardless of the code register
+	//and the contents of the buffer before the buffer update is returned
+	vdp->readbuffer = vdp->vram[address_reg];
+
+	vdpIncrementAddressRegister(vdp);
+
+	return buffer;
+}
+
+void vdpIncrementAddressRegister(struct Vdp* vdp)
+{
+	//increment address register
+	if (vdpGetAddressRegister(vdp) == 0x3FFF) //overflow to 0
+		vdp->vdpControl &= 0xC000; //keep code register unchanged
+	else
+		vdp->vdpControl++;
+}
+
+u8 vdpGetCodeRegister(struct Vdp* vdp)
+{
+	u8 code_register = (vdp->vdpControl >> 14) & 0x3;
+	return code_register;
+}
+
+u16 vdpGetAddressRegister(struct Vdp* vdp)
+{
+	u16 address_register = (vdp->vdpControl) & 0x3FFF;
+	return address_register;
 }
 
 u8 vdpPendingInterrupts(struct Vdp* vdp)
