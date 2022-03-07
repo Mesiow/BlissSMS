@@ -5,8 +5,6 @@ void ioInit(struct Io* io)
 {
 	io->memoryControl = 0x0;
 	io->ioControl = 0x0;
-	io->vcounter = 0x0;
-	io->hcounter = 0x0;
 	io->ioAB = 0x0;
 	io->ioBMisc = 0x0;
 }
@@ -41,9 +39,9 @@ u8 ioReadU8(struct Io* io, u8 address)
 	u8 even_address = ((address & 0x1) == 0);
 	if (address >= 0x40 && address <= 0x7F) {
 		if (even_address)
-			return io->vcounter;
+			return io->vdp->vcounter;
 		else
-			return io->hcounter;
+			return io->vdp->hcounter;
 	}
 	else if (address >= 0x80 && address <= 0xBF) {
 		if (even_address)

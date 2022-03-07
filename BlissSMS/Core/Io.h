@@ -4,8 +4,6 @@
 struct Io {
 	u8 memoryControl;
 	u8 ioControl;
-	u8 vcounter;
-	u8 hcounter;
 	u8 ioAB;
 	u8 ioBMisc;
 
