@@ -581,6 +581,78 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 		case 0x7E: bitMemHl(z80, 7); break;
 		case 0x7F: bit(z80, z80->af.hi, 7); break;
 
+		case 0x80: res(z80, &z80->bc.hi, 0); break;
+		case 0x81: res(z80, &z80->bc.lo, 0); break;
+		case 0x82: res(z80, &z80->de.hi, 0); break;
+		case 0x83: res(z80, &z80->de.lo, 0); break;
+		case 0x84: res(z80, &z80->hl.hi, 0); break;
+		case 0x85: res(z80, &z80->hl.lo, 0); break;
+		case 0x86: resMemHl(z80, 0); break;
+		case 0x87: res(z80, &z80->af.hi, 0); break;
+
+		case 0x88: res(z80, &z80->bc.hi, 1); break;
+		case 0x89: res(z80, &z80->bc.lo, 1); break;
+		case 0x8A: res(z80, &z80->de.hi, 1); break;
+		case 0x8B: res(z80, &z80->de.lo, 1); break;
+		case 0x8C: res(z80, &z80->hl.hi, 1); break;
+		case 0x8D: res(z80, &z80->hl.lo, 1); break;
+		case 0x8E: resMemHl(z80, 1); break;
+		case 0x8F: res(z80, &z80->af.hi, 1); break;
+
+		case 0x90: res(z80, &z80->bc.hi, 2); break;
+		case 0x91: res(z80, &z80->bc.lo, 2); break;
+		case 0x92: res(z80, &z80->de.hi, 2); break;
+		case 0x93: res(z80, &z80->de.lo, 2); break;
+		case 0x94: res(z80, &z80->hl.hi, 2); break;
+		case 0x95: res(z80, &z80->hl.lo, 2); break;
+		case 0x96: resMemHl(z80, 2); break;
+		case 0x97: res(z80, &z80->af.hi, 2); break;
+
+		case 0x98: res(z80, &z80->bc.hi, 3); break;
+		case 0x99: res(z80, &z80->bc.lo, 3); break;
+		case 0x9A: res(z80, &z80->de.hi, 3); break;
+		case 0x9B: res(z80, &z80->de.lo, 3); break;
+		case 0x9C: res(z80, &z80->hl.hi, 3); break;
+		case 0x9D: res(z80, &z80->hl.lo, 3); break;
+		case 0x9E: resMemHl(z80, 3); break;
+		case 0x9F: res(z80, &z80->af.hi, 3); break;
+
+		case 0xA0: res(z80, &z80->bc.hi, 4); break;
+		case 0xA1: res(z80, &z80->bc.lo, 4); break;
+		case 0xA2: res(z80, &z80->de.hi, 4); break;
+		case 0xA3: res(z80, &z80->de.lo, 4); break;
+		case 0xA4: res(z80, &z80->hl.hi, 4); break;
+		case 0xA5: res(z80, &z80->hl.lo, 4); break;
+		case 0xA6: resMemHl(z80, 4); break;
+		case 0xA7: res(z80, &z80->af.hi, 4); break;
+
+		case 0xA8: res(z80, &z80->bc.hi, 5); break;
+		case 0xA9: res(z80, &z80->bc.lo, 5); break;
+		case 0xAA: res(z80, &z80->de.hi, 5); break;
+		case 0xAB: res(z80, &z80->de.lo, 5); break;
+		case 0xAC: res(z80, &z80->hl.hi, 5); break;
+		case 0xAD: res(z80, &z80->hl.lo, 5); break;
+		case 0xAE: resMemHl(z80, 5); break;
+		case 0xAF: res(z80, &z80->af.hi, 5); break;
+
+		case 0xB0: res(z80, &z80->bc.hi, 6); break;
+		case 0xB1: res(z80, &z80->bc.lo, 6); break;
+		case 0xB2: res(z80, &z80->de.hi, 6); break;
+		case 0xB3: res(z80, &z80->de.lo, 6); break;
+		case 0xB4: res(z80, &z80->hl.hi, 6); break;
+		case 0xB5: res(z80, &z80->hl.lo, 6); break;
+		case 0xB6: resMemHl(z80, 6); break;
+		case 0xB7: res(z80, &z80->af.hi, 6); break;
+
+		case 0xB8: res(z80, &z80->bc.hi, 7); break;
+		case 0xB9: res(z80, &z80->bc.lo, 7); break;
+		case 0xBA: res(z80, &z80->de.hi, 7); break;
+		case 0xBB: res(z80, &z80->de.lo, 7); break;
+		case 0xBC: res(z80, &z80->hl.hi, 7); break;
+		case 0xBD: res(z80, &z80->hl.lo, 7); break;
+		case 0xBE: resMemHl(z80, 7); break;
+		case 0xBF: res(z80, &z80->af.hi, 7); break;
+
 		default:
 			printf("--Unimplemented Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
@@ -1474,6 +1546,22 @@ void bitMemHl(struct Z80* z80, u8 bitToTest)
 	bit(z80, value, bitToTest);
 
 	z80->cycles += 4;
+}
+
+void res(struct Z80* z80, u8* reg, u8 bit)
+{
+	*reg = clearBit(*reg, bit);
+	z80->cycles = 8;
+}
+
+void resMemHl(struct Z80* z80, u8 bit)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	res(z80, &value, bit);
+
+	z80WriteU8(z80, value, z80->hl.value);
+
+	z80->cycles += 7;
 }
 
 void loadRegIx(struct Z80* z80, u8* reg)
