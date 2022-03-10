@@ -356,6 +356,12 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x64: loadReg(z80, &z80->hl.hi, z80->hl.hi); break;
 		case 0x65: loadReg(z80, &z80->hl.hi, z80->hl.lo); break;
 		case 0x67: loadReg(z80, &z80->hl.hi, z80->af.hi); break;
+		case 0x68: loadReg(z80, &z80->hl.lo, z80->bc.hi); break;
+		case 0x69: loadReg(z80, &z80->hl.lo, z80->bc.lo); break;
+		case 0x6A: loadReg(z80, &z80->hl.lo, z80->de.hi); break;
+		case 0x6B: loadReg(z80, &z80->hl.lo, z80->de.lo); break;
+		case 0x6C: loadReg(z80, &z80->hl.lo, z80->hl.hi); break;
+		case 0x6D: loadReg(z80, &z80->hl.lo, z80->hl.lo); break;
 		case 0x6F: loadReg(z80, &z80->hl.lo, z80->af.hi); break;
 
 		case 0x78: loadAReg(z80, z80->bc.hi); break;
