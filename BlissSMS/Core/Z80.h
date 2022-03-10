@@ -71,10 +71,13 @@ u8 getFlag(struct Z80* z80, u8 flag);
 
 void z80HandleInterrupts(struct Z80* z80, struct Vdp *vdp);
 
-u8 z80OverflowFromAdd(u8 op1, u8 op2);
-u8 z80OverflowFromSub(u8 op1, u8 op2);
+u8 z80OverflowFromAdd8(u8 op1, u8 op2);
+u8 z80OverflowFromSub8(u8 op1, u8 op2);
+u8 z80OverflowFromAdd16(u16 op1, u16 op2);
+u8 z80OverflowFromSub16(u16 op1, u16 op2);
 u8 z80IsEvenParity(u8 value);
-u8 z80IsSigned(u8 value);
+u8 z80IsSigned8(u8 value);
+u8 z80IsSigned16(u16 value);
 
 //8 bit carry/borrow check
 u8 z80CarryOccured8(u8 op1, u8 op2); 
@@ -121,6 +124,7 @@ void load16Reg(struct Z80* z80, union Register* reg);
 void load16A(struct Z80* z80);
 void loadReg(struct Z80* z80, u8* destReg, u8 sourceReg);
 void loadRegMem(struct Z80* z80, u8* destReg, union Register* reg);
+void loadReg8Mem(struct Z80* z80, union Register mem, u8 reg);
 
 //Arithmetic
 void incReg16(struct Z80* z80, union Register* reg);
@@ -135,6 +139,8 @@ void addMemHl(struct Z80* z80, u8* destReg);
 
 void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg);
 void subMemHl(struct Z80* z80, u8* destReg);
+
+void sbcReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg);
 
 //Branches/Jumps/Returns
 void jrImm(struct Z80* z80);

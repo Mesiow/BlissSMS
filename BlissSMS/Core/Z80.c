@@ -92,7 +92,7 @@ void z80HandleInterrupts(struct Z80* z80, struct Vdp *vdp)
 	}
 }
 
-u8 z80OverflowFromAdd(u8 op1, u8 op2)
+u8 z80OverflowFromAdd8(u8 op1, u8 op2)
 {
 	u8 total = (op1 + op2) & 0xFF;
 	//check if sign are same and if they are ~(op1 ^ op2) will evaluate to 1
@@ -100,12 +100,24 @@ u8 z80OverflowFromAdd(u8 op1, u8 op2)
 	return (~(op1 ^ op2) & ((op1 ^ total))) >> 7;
 }
 
-u8 z80OverflowFromSub(u8 op1, u8 op2)
+u8 z80OverflowFromSub8(u8 op1, u8 op2)
 {		
 	u8 total = (op1 - op2) & 0xFF;
 	//first check if both operands have a different sign,
 	//then check if the result has the same sign as the second operand
 	return (((s8)(op1 ^ op2) < 0) && ((s8)(op2 ^ total) >= 0));
+}
+
+u8 z80OverflowFromAdd16(u16 op1, u16 op2)
+{
+	u16 total = (op1 + op2) & 0xFFFF;
+	return (~(op1 ^ op2) & ((op1 ^ total))) >> 15;
+}
+
+u8 z80OverflowFromSub16(u16 op1, u16 op2)
+{
+	u16 total = (op1 - op2) & 0xFFFF;
+	return (((s16)(op1 ^ op2) < 0) && ((s16)(op2 ^ total) >= 0));
 }
 
 u8 z80IsEvenParity(u8 value)
@@ -114,7 +126,13 @@ u8 z80IsEvenParity(u8 value)
 	return ((count % 2) == 0);
 }
 
-u8 z80IsSigned(u8 value)
+u8 z80IsSigned16(u16 value)
+{
+	s16 signed_value = (s16)value;
+	return (((signed_value >> 15) & 0x1) == 0x1);
+}
+
+u8 z80IsSigned8(u8 value)
 {
 	s8 signed_value = (s8)value;
 	return (((signed_value >> 7) & 0x1) == 0x1);
@@ -301,6 +319,8 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		//Register pointer loads
 		case 0x0A: loadRegMem(z80, &z80->af.hi, &z80->bc); break;
 		case 0x1A: loadRegMem(z80, &z80->af.hi, &z80->de); break;
+		case 0x02: loadReg8Mem(z80, z80->bc, z80->af.hi); break;
+		case 0x12: loadReg8Mem(z80, z80->de, z80->af.hi); break;
 
 		case 0x22: loadMemReg16(z80, &z80->hl); break;
 		case 0x32: loadMemReg8(z80, z80->af.hi); break;
@@ -395,6 +415,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x84: addReg8(z80, &z80->af.hi, z80->hl.hi); break;
 		case 0x85: addReg8(z80, &z80->af.hi, z80->hl.lo); break;
 		case 0x86: addMemHl(z80, &z80->af.hi); break;
+		case 0x87: addReg8(z80, &z80->af.hi, z80->af.hi); break;
 		case 0xC6: addReg8(z80, &z80->af.hi, z80FetchU8(z80)); z80->cycles += 3; break;
 
 		//8 bit reg sub
@@ -747,6 +768,12 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0x56: im(z80, One); break;
 		case 0x76: im(z80, One); break;
 
+		//Arithmetic
+		case 0x42: sbcReg16(z80, &z80->hl, &z80->bc); break;
+		case 0x52: sbcReg16(z80, &z80->hl, &z80->de); break;
+		case 0x62: sbcReg16(z80, &z80->hl, &z80->hl); break;
+		case 0x72: sbcReg16(z80, &z80->hl, &z80->sp); break;
+
 		case 0x45: retn(z80); break;
 		case 0x4D: reti(z80); break;
 		case 0x55: retn(z80); break;
@@ -884,6 +911,12 @@ void loadRegMem(struct Z80* z80, u8* destReg, union Register* reg)
 	z80->cycles = 7;
 }
 
+void loadReg8Mem(struct Z80* z80, union Register mem, u8 reg)
+{
+	z80WriteU8(z80, reg, mem.value);
+	z80->cycles = 7;
+}
+
 void incReg16(struct Z80* z80, union Register* reg)
 {
 	reg->value++;
@@ -901,10 +934,10 @@ void decReg8(struct Z80* z80, u8* reg)
 	u8 result = (*reg) - 1;
 
 	z80SetFlag(z80, FLAG_N);
-	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
 	z80AffectFlag(z80, z80HalfBorrowOccured8(*reg, 1), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromSub(*reg, 1), FLAG_PV);
+	z80AffectFlag(z80, z80OverflowFromSub8(*reg, 1), FLAG_PV);
 
 	(*reg)--;
 	z80->cycles = 4;
@@ -925,10 +958,10 @@ void incReg8(struct Z80* z80, u8* reg)
 	u8 result = (*reg) + 1;
 
 	z80ClearFlag(z80, FLAG_N);
-	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
 	z80AffectFlag(z80, z80HalfCarryOccured8(*reg, 1), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromAdd(*reg, 1), FLAG_PV);
+	z80AffectFlag(z80, z80OverflowFromAdd8(*reg, 1), FLAG_PV);
 
 	(*reg)++;
 	z80->cycles = 4;
@@ -953,9 +986,10 @@ void addReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 	u8 result = dest_reg + sourceReg;
 
 	z80ClearFlag(z80, FLAG_N);
-	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
+	z80AffectFlag(z80, result == 0, FLAG_Z);
 	z80AffectFlag(z80, z80HalfCarryOccured8(dest_reg, sourceReg), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromAdd(dest_reg, sourceReg), FLAG_PV);
+	z80AffectFlag(z80, z80OverflowFromAdd8(dest_reg, sourceReg), FLAG_PV);
 	z80AffectFlag(z80, z80CarryOccured8(dest_reg, sourceReg), FLAG_C);
 
 	(*destReg) += sourceReg;
@@ -977,9 +1011,10 @@ void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 	u8 result = dest_reg - sourceReg;
 
 	z80SetFlag(z80, FLAG_N);
-	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
+	z80AffectFlag(z80, result == 0, FLAG_Z);
 	z80AffectFlag(z80, z80HalfBorrowOccured8(dest_reg, sourceReg), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromSub(dest_reg, sourceReg), FLAG_PV);
+	z80AffectFlag(z80, z80OverflowFromSub8(dest_reg, sourceReg), FLAG_PV);
 	z80AffectFlag(z80, z80BorrowOccured8(dest_reg, sourceReg), FLAG_C);
 
 	(*destReg) -= sourceReg;
@@ -993,6 +1028,22 @@ void subMemHl(struct Z80* z80, u8* destReg)
 	subReg8(z80, destReg, value);
 
 	z80->cycles += 3;
+}
+
+void sbcReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg)
+{
+	u8 carry = getFlag(z80, FLAG_C);
+	u16 result = destReg->value - sourceReg->value - carry;
+
+	z80SetFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80IsSigned16(result), FLAG_S);
+	z80AffectFlag(z80, result == 0, FLAG_Z);
+	z80AffectFlag(z80, z80HalfBorrowOccured16(destReg->value, sourceReg->value - carry), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromSub16(destReg->value, sourceReg->value - carry), FLAG_PV);
+	z80AffectFlag(z80, z80BorrowOccured16(destReg->value + carry, sourceReg->value), FLAG_C);
+
+	destReg->value = result;
+	z80->cycles = 15;
 }
 
 void jrImm(struct Z80* z80)
@@ -1122,7 +1173,7 @@ void xor(struct Z80* z80, u8 reg)
 
 	z80AffectFlag(z80, (result == 0), FLAG_Z);
 	z80AffectFlag(z80, z80IsEvenParity(result), FLAG_PV);
-	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 
 	z80ClearFlag(z80, (FLAG_C | FLAG_N | FLAG_H));
 	z80->cycles = 4;
@@ -1143,7 +1194,7 @@ void or(struct Z80 * z80, u8 reg)
 
 	z80AffectFlag(z80, (result == 0), FLAG_Z);
 	z80AffectFlag(z80, z80IsEvenParity(result), FLAG_PV);
-	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 
 	z80ClearFlag(z80, (FLAG_C | FLAG_N | FLAG_H));
 	z80->cycles = 4;
@@ -1164,7 +1215,7 @@ void and(struct Z80* z80, u8 reg)
 
 	z80AffectFlag(z80, (result == 0), FLAG_Z);
 	z80AffectFlag(z80, z80IsEvenParity(result), FLAG_PV);
-	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 
 	z80SetFlag(z80, FLAG_H);
 	z80ClearFlag(z80, (FLAG_C | FLAG_N));
@@ -1367,7 +1418,7 @@ void in(struct Z80* z80, u8 sourcePort, u8* destReg, u8 opcode)
 
 	z80AffectFlag(z80, (io_value == 0), FLAG_Z);
 	z80AffectFlag(z80, z80IsEvenParity(io_value), FLAG_PV);
-	z80AffectFlag(z80, z80IsSigned(io_value), FLAG_S);
+	z80AffectFlag(z80, z80IsSigned8(io_value), FLAG_S);
 
 	z80ClearFlag(z80, (FLAG_H | FLAG_N));
 	z80->cycles = 12;
@@ -1435,8 +1486,8 @@ void cp(struct Z80* z80, u8 reg)
 
 	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80OverflowFromSub(z80->af.hi, reg), FLAG_PV);
-	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
+	z80AffectFlag(z80, z80OverflowFromSub8(z80->af.hi, reg), FLAG_PV);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 	z80AffectFlag(z80, z80BorrowOccured8(z80->af.hi, reg), FLAG_C);
 	z80AffectFlag(z80, z80HalfBorrowOccured8(z80->af.hi, reg), FLAG_H);
 
@@ -1532,7 +1583,7 @@ void rrc(struct Z80* z80, u8* reg)
 	}
 	(*reg) = reg_value;
 
-	z80AffectFlag(z80, z80IsSigned(reg_value), FLAG_S);
+	z80AffectFlag(z80, z80IsSigned8(reg_value), FLAG_S);
 	z80AffectFlag(z80, reg_value == 0, FLAG_Z);
 	z80AffectFlag(z80, z80IsEvenParity(reg_value), FLAG_PV);
 
