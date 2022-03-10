@@ -281,7 +281,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		//Misc
 		case 0x2F: cpl(z80); break;
 		case 0x76: halt(z80); break;
-		case 0xFE: cp(z80); break;
+		case 0xFE: cp(z80, z80FetchU8(z80)); break;
 		case 0x27: daa(z80); break;
 		case 0x3F: ccf(z80); break;
 
@@ -438,11 +438,20 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xB6: orMemHl(z80); break;
 		case 0xB7: or(z80, z80->af.hi); break;
 
+		case 0xB8: cp(z80, z80->bc.hi); break;
+		case 0xB9: cp(z80, z80->bc.lo); break;
+		case 0xBA: cp(z80, z80->de.hi); break;
+		case 0xBB: cp(z80, z80->de.lo); break;
+		case 0xBC: cp(z80, z80->hl.hi); break;
+		case 0xBD: cp(z80, z80->hl.lo); break;
+		case 0xBE: cpMemHl(z80); break;
+		case 0xBF: cp(z80, z80->af.hi); break;
 
 		case 0xCD: call(z80); break;
 		case 0xC4: callCond(z80, getFlag(z80, FLAG_Z) == 0); break;
 		case 0xDC: callCond(z80, getFlag(z80, FLAG_C)); break;
 
+		case 0xC8: retCond(z80, getFlag(z80, FLAG_Z)); break;
 		case 0xC9: ret(z80); break;
 		case 0xD0: retCond(z80, getFlag(z80, FLAG_C) == 0); break;
 
@@ -1324,19 +1333,28 @@ void halt(struct Z80* z80)
 	z80->cycles = 4;
 }
 
-void cp(struct Z80* z80)
+void cp(struct Z80* z80, u8 reg)
 {
-	u8 value = z80FetchU8(z80);
-	u8 result = z80->af.hi - value;
+	u8 result = z80->af.hi - reg;
 
 	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80OverflowFromSub(z80->af.hi, value), FLAG_PV);
+	z80AffectFlag(z80, z80OverflowFromSub(z80->af.hi, reg), FLAG_PV);
 	z80AffectFlag(z80, z80IsSigned(result), FLAG_S);
-	z80AffectFlag(z80, z80BorrowOccured8(z80->af.hi, value), FLAG_C);
-	z80AffectFlag(z80, z80HalfBorrowOccured8(z80->af.hi, value), FLAG_H);
+	z80AffectFlag(z80, z80BorrowOccured8(z80->af.hi, reg), FLAG_C);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(z80->af.hi, reg), FLAG_H);
 
-	z80->cycles = 7;
+	z80->cycles = 4;
+	if (&reg != &z80->af.hi || &reg != &z80->bc.hi || &reg != &z80->bc.lo ||
+		&reg != &z80->de.hi || &reg != &z80->de.lo || &reg != &z80->hl.hi ||
+		&reg != z80->hl.lo)
+		z80->cycles += 3;
+}
+
+void cpMemHl(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	cp(z80, value);
 }
 
 void daa(struct Z80* z80)

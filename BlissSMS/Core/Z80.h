@@ -184,7 +184,8 @@ void ldir(struct Z80* z80);
 //Misc
 void cpl(struct Z80* z80);
 void halt(struct Z80* z80);
-void cp(struct Z80* z80);
+void cp(struct Z80* z80, u8 reg);
+void cpMemHl(struct Z80* z80);
 void daa(struct Z80* z80);
 void ccf(struct Z80* z80);
 
