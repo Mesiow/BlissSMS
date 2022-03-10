@@ -788,6 +788,10 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0x62: sbcReg16(z80, &z80->hl, &z80->hl); break;
 		case 0x72: sbcReg16(z80, &z80->hl, &z80->sp); break;
 
+		//Misc
+		case 0x44: neg(z80); break;
+
+		//Returns
 		case 0x45: retn(z80); break;
 		case 0x4D: reti(z80); break;
 		case 0x55: retn(z80); break;
@@ -1577,6 +1581,21 @@ void ccf(struct Z80* z80)
 	z80AffectFlag(z80, carry ^ 1, FLAG_C);
 
 	z80->cycles = 4;
+}
+
+void neg(struct Z80* z80)
+{
+	u8 result = 0 - z80->af.hi;
+
+	z80SetFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
+	z80AffectFlag(z80, result == 0, FLAG_Z);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(0, z80->af.hi), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromSub8(0, z80->af.hi), FLAG_PV);
+	z80AffectFlag(z80, z80BorrowOccured8(0, z80->af.hi), FLAG_C);
+
+	z80->af.hi = result;
+	z80->cycles = 8;
 }
 
 void rrc(struct Z80* z80, u8* reg)
