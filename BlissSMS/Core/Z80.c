@@ -476,9 +476,12 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xBE: cpMemHl(z80); break;
 		case 0xBF: cp(z80, z80->af.hi); break;
 
+		case 0xCC: callCond(z80, getFlag(z80, FLAG_Z)); break;
 		case 0xCD: call(z80); break;
 		case 0xC4: callCond(z80, getFlag(z80, FLAG_Z) == 0); break;
 		case 0xDC: callCond(z80, getFlag(z80, FLAG_C)); break;
+		case 0xEC: callCond(z80, getFlag(z80, FLAG_PV)); break;
+		case 0xFC: callCond(z80, getFlag(z80, FLAG_S));  break;
 
 		case 0xC8: retCond(z80, getFlag(z80, FLAG_Z)); break;
 		case 0xC9: ret(z80); break;
@@ -735,6 +738,7 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		case 0x5E: bitIx(z80, 3); break;
 		case 0x7E: bitIx(z80, 7); break;
 		default:
 			printf("--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
