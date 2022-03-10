@@ -788,6 +788,11 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0x62: sbcReg16(z80, &z80->hl, &z80->hl); break;
 		case 0x72: sbcReg16(z80, &z80->hl, &z80->sp); break;
 
+		case 0x4A: adcReg16(z80, &z80->hl, &z80->bc); break;
+		case 0x5A: adcReg16(z80, &z80->hl, &z80->de); break;
+		case 0x6A: adcReg16(z80, &z80->hl, &z80->hl); break;
+		case 0x7A: adcReg16(z80, &z80->hl, &z80->sp); break;
+
 		//Misc
 		case 0x44: neg(z80); break;
 
@@ -1021,6 +1026,22 @@ void addMemHl(struct Z80* z80, u8* destReg)
 	addReg8(z80, destReg, value);
 
 	z80->cycles += 3;
+}
+
+void adcReg16(struct Z80* z80, union Register* destReg, union Register* sourceReg)
+{
+	u8 carry = getFlag(z80, FLAG_C);
+	u16 result = destReg->value + sourceReg->value + carry;
+
+	z80ClearFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80IsSigned16(result), FLAG_S);
+	z80AffectFlag(z80, result == 0, FLAG_Z);
+	z80AffectFlag(z80, z80HalfCarryOccured16(destReg->value, sourceReg->value + carry), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromAdd16(destReg->value, sourceReg->value + carry), FLAG_PV);
+	z80AffectFlag(z80, z80CarryOccured16(destReg->value, sourceReg->value + carry), FLAG_C);
+
+	destReg->value = result;
+	z80->cycles = 15;
 }
 
 void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
