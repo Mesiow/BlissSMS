@@ -1,9 +1,10 @@
 #include "Vdp.h"
 #include "Io.h"
+#include "System.h"
 
 void vdpInit(struct Vdp* vdp)
 {
-	memset(vdp->registers, 0x0, 0xA);
+	memset(vdp->registers, 0xFF, 0xB);
 	memset(vdp->vram, 0x0, 0x4000);
 	memset(vdp->cram, 0x0, 0x20);
 
@@ -14,6 +15,10 @@ void vdpInit(struct Vdp* vdp)
 
 	vdp->vdpControl = 0x0;
 	vdp->vdpData = 0x0;
+	vdp->hcounter = 0;
+	vdp->vcounter = 0;
+	vdp->lineCounter = 0;
+
 	vdp->second_control_write = 0x0;
 	vdp->readbuffer = 0x0;
 }
@@ -26,19 +31,38 @@ void vdpConnectIo(struct Vdp *vdp, struct Io* io)
 void vdpUpdate(struct Vdp *vdp, s32 cycles)
 {
 	vdp->cycles += cycles;
-	switch (vdp->state) {
-		case Visible: {
+	if (vdp->cycles >= CYCLES_PER_SCANLINE) {
+		if (vdp->vcounter <= 192) {
+			vdp->lineCounter--;
 
-		}
-		break;
-		case HBlank: {
+			//underflow from 0 to 0xFF sets irq and reloads line counter
+			if (vdp->lineCounter == 0xFF) {
+				vdp->lineCounter = vdp->registers[0xA];
+				vdp->line_int_pending = 1;
+			}
 
+			//Render at start of new line
+			if (vdpIsDisplayVisible(vdp)) {
+				if (vdpIsDisplayActive(vdp)) {
+					vdpRender(vdp);
+				}
+			}
 		}
-		break;
-		case VBlank: {
 
+		vdp->cycles -= CYCLES_PER_SCANLINE;
+		vdp->vcounter++;
+
+		switch (vdp->vcounter) {
+			case 193: { //attempt to generate frame interrupt (Vblank period)
+				vdp->status_flags = setBit(vdp->status_flags, 7); //set frame int pending
+				vdp->lineCounter = vdp->registers[0xA];
+			}
+			break;
+			case 262: {
+				vdp->vcounter = 0;
+			}
+			break;
 		}
-		break;
 	}
 }
 
@@ -66,6 +90,16 @@ void vdpSetMode(struct Vdp* vdp)
 	if (mode == 0x1) {
 		vdp->mode = Mode4;
 	}
+}
+
+u8 vdpIsDisplayVisible(struct Vdp* vdp)
+{
+	return (vdp->registers[1] >> 6) & 0x1;
+}
+
+u8 vdpIsDisplayActive(struct Vdp* vdp)
+{
+	return vdp->vcounter < 192;
 }
 
 void vdpWriteControlPort(struct Vdp* vdp, u8 value)
@@ -139,6 +173,7 @@ void vdpWriteDataPort(struct Vdp* vdp, u8 value)
 u8 vdpReadControlPort(struct Vdp* vdp)
 {
 	vdp->second_control_write = 0;
+	vdp->line_int_pending = 0;
 
 	u8 status_flags = vdp->status_flags;
 	vdp->status_flags = 0;

@@ -14,6 +14,9 @@
 	$0000-------------------------------------------------------------- -
 */
 
+#define DISPLAY_WIDTH 256
+#define DISPLAY_HEIGHT 192
+
 enum VdpDisplayState {
 	Visible = 0,
 	HBlank,
@@ -40,6 +43,9 @@ struct Vdp {
 	//Vdp Ports
 	u16 vdpControl;
 	u16 vdpData;
+	u8 vcounter;
+	u16 hcounter;
+	u16 lineCounter;
 
 	//Flags
 	u8 status_flags; //holds frame interrupt pending flag, sprite overflow flag and sprite collision flag
@@ -58,6 +64,8 @@ void vdpRender(struct Vdp* vdp);
 void vdpRenderBackground(struct Vdp* vdp);
 void vdpRenderSprites(struct Vdp* vdp);
 void vdpSetMode(struct Vdp* vdp);
+u8 vdpIsDisplayVisible(struct Vdp* vdp);
+u8 vdpIsDisplayActive(struct Vdp* vdp);
 
 void vdpWriteControlPort(struct Vdp* vdp, u8 value);
 void vdpWriteDataPort(struct Vdp* vdp, u8 value);
