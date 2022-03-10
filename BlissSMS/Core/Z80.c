@@ -289,6 +289,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x07: rlca(z80); break;
 		case 0x0F: rrca(z80); break;
 		case 0x17: rla(z80); break;
+		case 0x1F: rra(z80); break;
 
 		//Exchanges
 		case 0x08: ex(z80, &z80->af, &z80->shadowedregs.af); break;
@@ -1131,7 +1132,20 @@ void rrca(struct Z80* z80)
 
 void rra(struct Z80* z80)
 {
+	u8 carry = getFlag(z80, FLAG_C);
+	u8 lsb = z80->af.hi & 0x1;
 
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+
+	z80->af.hi >>= 1;
+	z80->af.hi |= (carry << 7);
+
+	if (lsb) {
+		z80SetFlag(z80, FLAG_C);
+	}
+	else {
+		z80ClearFlag(z80, FLAG_C);
+	}
 
 	z80->cycles = 4;
 }
