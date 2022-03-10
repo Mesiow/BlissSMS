@@ -205,13 +205,13 @@ u16 z80Clock(struct Z80* z80)
 		u8 opcode = z80ReadU8(z80, z80->pc);
 		z80->pc++;
 
-		if (z80->pc == 0x182E) {
+		/*if (z80->pc == 0x182E) {
 			printf("hit 182E\n");
 			debug = 1;
 		}
 		if (debug) {
 			printf("pc: 0x%04X\n", z80->pc);
-		}
+		}*/
 
 		executeInstruction(z80, opcode);
 	}
@@ -322,7 +322,13 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x54: loadReg(z80, &z80->de.hi, z80->hl.hi); break;
 		case 0x5B: loadReg(z80, &z80->de.lo, z80->de.lo); break;
 		case 0x5D: loadReg(z80, &z80->de.lo, z80->hl.lo); break;
+		case 0x60: loadReg(z80, &z80->hl.hi, z80->bc.hi); break;
 		case 0x61: loadReg(z80, &z80->hl.hi, z80->bc.lo); break;
+		case 0x62: loadReg(z80, &z80->hl.hi, z80->de.hi); break;
+		case 0x63: loadReg(z80, &z80->hl.hi, z80->de.lo); break;
+		case 0x64: loadReg(z80, &z80->hl.hi, z80->hl.hi); break;
+		case 0x65: loadReg(z80, &z80->hl.hi, z80->hl.lo); break;
+		case 0x67: loadReg(z80, &z80->hl.hi, z80->af.hi); break;
 		case 0x6F: loadReg(z80, &z80->hl.lo, z80->af.hi); break;
 
 		case 0x78: loadAReg(z80, z80->bc.hi); break;
@@ -362,6 +368,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x3B: decReg16(z80, &z80->sp); break;
 		case 0x05: decReg8(z80, &z80->bc.hi); break;
 		case 0x25: decReg8(z80, &z80->hl.hi); break;
+		case 0x0D: decReg8(z80, &z80->bc.lo); break;
 		case 0x1D: decReg8(z80, &z80->de.lo); break;
 		case 0x35: decMemHl(z80); break;
 
@@ -1118,6 +1125,13 @@ void rrca(struct Z80* z80)
 		z80ClearFlag(z80, FLAG_C);
 		z80->af.hi = clearBit(z80->af.hi, 7);
 	}
+
+	z80->cycles = 4;
+}
+
+void rra(struct Z80* z80)
+{
+
 
 	z80->cycles = 4;
 }

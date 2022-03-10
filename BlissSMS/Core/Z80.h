@@ -161,6 +161,7 @@ void andMemHl(struct Z80* z80);
 //Shifts
 void rlca(struct Z80* z80);
 void rrca(struct Z80* z80);
+void rra(struct Z80* z80);
 void rla(struct Z80* z80);
 
 //Exchanges
