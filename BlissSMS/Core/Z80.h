@@ -174,6 +174,7 @@ void pop(struct Z80* z80, union Register* reg);
 
 //Io/Ports
 void outa(struct Z80* z80);
+void outi(struct Z80* z80);
 void ina(struct Z80* z80);
 void out(struct Z80* z80, u8 destPort, u8 sourceReg);
 void in(struct Z80* z80, u8 sourcePort, u8* destReg, u8 opcode);

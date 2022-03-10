@@ -754,10 +754,10 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0x75: retn(z80); break;
 		case 0x7D: retn(z80); break;
 
+		//I/O instructions
+		case 0xA3: outi(z80); break;
 		case 0xB0: ldir(z80); break;
 		case 0xB3: otir(z80); break;
-
-		case 0x5F: printf("hello\n"); break;
 
 		default:
 			printf("--Unimplemented Extended Instruction--: 0x%02X\n", opcode);
@@ -1311,6 +1311,22 @@ void outa(struct Z80* z80)
 	ioWriteU8(z80->io, z80->af.hi, io_port);
 
 	z80->cycles = 11;
+}
+
+void outi(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	u8 port = z80->bc.lo;
+
+	ioWriteU8(z80->io, value, port);
+
+	z80->hl.value++;
+	z80->bc.hi--;
+
+	z80SetFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80->bc.hi == 0, FLAG_Z);
+
+	z80->cycles = 16;
 }
 
 void ina(struct Z80* z80)
