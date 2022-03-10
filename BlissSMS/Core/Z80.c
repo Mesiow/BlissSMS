@@ -281,7 +281,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		//Misc
 		case 0x2F: cpl(z80); break;
 		case 0x76: halt(z80); break;
-		case 0xFE: cp(z80, z80FetchU8(z80)); break;
+		case 0xFE: cp(z80, z80FetchU8(z80)); z80->cycles += 3; break;
 		case 0x27: daa(z80); break;
 		case 0x3F: ccf(z80); break;
 
@@ -405,6 +405,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x94: subReg8(z80, &z80->af.hi, z80->hl.hi); break;
 		case 0x95: subReg8(z80, &z80->af.hi, z80->hl.lo); break;
 		case 0x96: subMemHl(z80, &z80->af.hi); break;
+		case 0xD6: subReg8(z80, &z80->af.hi, z80FetchU8(z80)); z80->cycles += 3; break;
 
 		//Jumps/Branches/Rets
 		case 0x10: djnz(z80); break;
@@ -443,6 +444,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xB5: or(z80, z80->hl.lo); break;
 		case 0xB6: orMemHl(z80); break;
 		case 0xB7: or(z80, z80->af.hi); break;
+		case 0xF6: or(z80, z80FetchU8(z80)); z80->cycles += 3; break;
 
 		case 0xB8: cp(z80, z80->bc.hi); break;
 		case 0xB9: cp(z80, z80->bc.lo); break;
@@ -1439,10 +1441,6 @@ void cp(struct Z80* z80, u8 reg)
 	z80AffectFlag(z80, z80HalfBorrowOccured8(z80->af.hi, reg), FLAG_H);
 
 	z80->cycles = 4;
-	if (&reg != &z80->af.hi || &reg != &z80->bc.hi || &reg != &z80->bc.lo ||
-		&reg != &z80->de.hi || &reg != &z80->de.lo || &reg != &z80->hl.hi ||
-		&reg != z80->hl.lo)
-		z80->cycles += 3;
 }
 
 void cpMemHl(struct Z80* z80)
