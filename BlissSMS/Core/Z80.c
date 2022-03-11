@@ -722,6 +722,7 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x29: addReg16(z80, &z80->ix, &z80->ix); break;
 		case 0x39: addReg16(z80, &z80->ix, &z80->sp); break;
 
+		case 0x34: incMemIx(z80); break;
 		case 0x35: decMemIx(z80); break;
 
 		//Load value from ix + offset into reg8
@@ -1767,6 +1768,19 @@ void loadIxImm(struct Z80* z80)
 	z80WriteU8(z80, imm_value, address);
 
 	z80->cycles = 19;
+}
+
+void incMemIx(struct Z80* z80)
+{
+	u8 offset = z80FetchU8(z80);
+	u16 address = z80->ix.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	incReg8(z80, &value);
+
+	z80WriteU8(z80, value, address);
+
+	z80->cycles += 19;
 }
 
 void addMemIx(struct Z80* z80, u8* reg)
