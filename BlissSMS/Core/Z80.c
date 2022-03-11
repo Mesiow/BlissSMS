@@ -349,6 +349,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x54: loadReg(z80, &z80->de.hi, z80->hl.hi); break;
 		case 0x5B: loadReg(z80, &z80->de.lo, z80->de.lo); break;
 		case 0x5D: loadReg(z80, &z80->de.lo, z80->hl.lo); break;
+		case 0x5F: loadReg(z80, &z80->de.lo, z80->af.hi); break;
 		case 0x60: loadReg(z80, &z80->hl.hi, z80->bc.hi); break;
 		case 0x61: loadReg(z80, &z80->hl.hi, z80->bc.lo); break;
 		case 0x62: loadReg(z80, &z80->hl.hi, z80->de.hi); break;
@@ -400,9 +401,11 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x2B: decReg16(z80, &z80->hl); break;
 		case 0x3B: decReg16(z80, &z80->sp); break;
 		case 0x05: decReg8(z80, &z80->bc.hi); break;
+		case 0x15: decReg8(z80, &z80->de.hi); break;
 		case 0x25: decReg8(z80, &z80->hl.hi); break;
 		case 0x0D: decReg8(z80, &z80->bc.lo); break;
 		case 0x1D: decReg8(z80, &z80->de.lo); break;
+		case 0x3D: decReg8(z80, &z80->af.hi); break;
 		case 0x35: decMemHl(z80); break;
 
 		case 0x04: incReg8(z80, &z80->bc.hi); break;
@@ -546,6 +549,16 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 		case 0x0C: rrc(z80, &z80->hl.hi); break;
 		case 0x0D: rrc(z80, &z80->hl.lo); break;
 		case 0x0E: rrcMemHl(z80); break;
+
+		//srl
+		case 0x38: srl(z80, &z80->bc.hi); break;
+		case 0x39: srl(z80, &z80->bc.lo); break;
+		case 0x3A: srl(z80, &z80->de.hi); break;
+		case 0x3B: srl(z80, &z80->de.lo); break;
+		case 0x3C: srl(z80, &z80->hl.hi); break;
+		case 0x3D: srl(z80, &z80->hl.lo); break;
+		case 0x3E: srlMemHl(z80); break;
+		case 0x3F: srl(z80, &z80->af.hi); break;
 
 		//Bit
 		case 0x40: bit(z80, z80->bc.hi, 0); break;
@@ -1648,6 +1661,41 @@ void rrcMemHl(struct Z80* z80)
 {
 	u8 value = z80ReadU8(z80, z80->hl.value);
 	rrc(z80, &value);
+
+	z80WriteU8(z80, value, z80->hl.value);
+
+	z80->cycles = 15;
+}
+
+void srl(struct Z80* z80, u8* reg)
+{
+	u8 reg_value = (*reg);
+	u8 lsb = (reg_value & 0x1);
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+
+	reg_value >>= 1;
+	reg_value = clearBit(reg_value, 7);
+	if (lsb) {
+		z80SetFlag(z80, FLAG_C);
+	}
+	else {
+		z80ClearFlag(z80, FLAG_C);
+	}
+
+	*reg = reg_value;
+
+	z80ClearFlag(z80, FLAG_S);
+	z80AffectFlag(z80, reg_value == 0, FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(reg_value), FLAG_PV);
+
+	z80->cycles = 8;
+}
+
+void srlMemHl(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	srl(z80, &value);
 
 	z80WriteU8(z80, value, z80->hl.value);
 

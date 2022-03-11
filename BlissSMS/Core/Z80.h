@@ -200,6 +200,9 @@ void neg(struct Z80* z80);
 //Bit instructions
 void rrc(struct Z80* z80, u8* reg);
 void rrcMemHl(struct Z80* z80);
+void srl(struct Z80* z80, u8* reg);
+void srlMemHl(struct Z80* z80);
+
 void bit(struct Z80* z80, u8 reg, u8 bit);
 void bitMemHl(struct Z80* z80, u8 bitToTest);
 void res(struct Z80* z80, u8* reg, u8 bit);
