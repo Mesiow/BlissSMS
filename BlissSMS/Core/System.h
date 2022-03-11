@@ -24,7 +24,7 @@ struct System {
 
 void systemInit(struct System* sys);
 void systemRunEmulation(struct System* sys);
-void systemRenderGraphics(struct System* sys);
+void systemRenderGraphics(struct System* sys, sfRenderWindow *window);
 void systemFree(struct System* sys);
 
 void tickCpu(struct System* sys);

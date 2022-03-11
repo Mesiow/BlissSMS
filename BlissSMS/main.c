@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[]) {
 	
-	sfVideoMode mode = { 640, 480, 32 };
+	sfVideoMode mode = { 512, 384, 32 };
 	sfRenderWindow* window = sfRenderWindow_create(mode, "BlissSMS", sfResize | sfClose, NULL);
 	if (!window) {
 		printf("CSFML Window failed to create\n");
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
 		sfRenderWindow_clear(window, sfBlue);
 
-		systemRenderGraphics(&sms);
+		systemRenderGraphics(&sms, window);
 
 		sfRenderWindow_display(window);
 

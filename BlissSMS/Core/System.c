@@ -48,9 +48,9 @@ void systemRunEmulation(struct System* sys)
 	}
 }
 
-void systemRenderGraphics(struct System* sys)
+void systemRenderGraphics(struct System* sys, sfRenderWindow *window)
 {
-	vdpDisplayGraphics(&sys->vdp);
+	vdpDisplayGraphics(&sys->vdp, window);
 }
 
 void systemFree(struct System* sys)

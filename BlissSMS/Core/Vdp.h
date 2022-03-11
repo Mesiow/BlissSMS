@@ -1,5 +1,6 @@
 #pragma once
 #include "Util.h"
+#include <SFML\Graphics.h>
 
 //Vdp vram memory map
 /*
@@ -54,13 +55,17 @@ struct Vdp {
 					  //otherwise writes go to cram
 	u8 readbuffer;
 
+	struct sfImage* pixels;
+	struct sfTexture* framebuffer;
+	struct sfSprite* frame;
+
 	struct Io* io;
 };
 
 void vdpInit(struct Vdp* vdp);
 void vdpConnectIo(struct Vdp *vdp, struct Io* io);
 void vdpUpdate(struct Vdp *vdp, s32 cycles);
-void vdpDisplayGraphics(struct Vdp* vdp);
+void vdpDisplayGraphics(struct Vdp* vdp, sfRenderWindow *window);
 void vdpRender(struct Vdp* vdp);
 void vdpRenderBackground(struct Vdp* vdp);
 void vdpRenderSprites(struct Vdp* vdp);

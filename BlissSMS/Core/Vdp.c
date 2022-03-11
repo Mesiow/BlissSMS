@@ -21,6 +21,16 @@ void vdpInit(struct Vdp* vdp)
 
 	vdp->second_control_write = 0x0;
 	vdp->readbuffer = 0x0;
+
+	vdp->pixels = sfImage_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+	vdp->pixels = sfImage_createFromColor(DISPLAY_WIDTH, DISPLAY_HEIGHT, sfWhite);
+
+	vdp->framebuffer = sfTexture_createFromImage(vdp->pixels, NULL);
+	vdp->frame = sfSprite_create();
+	sfSprite_setTexture(vdp->frame, vdp->framebuffer, sfTrue);
+
+	sfVector2f scale = { 2, 2 };
+	sfSprite_setScale(vdp->frame, scale);
 }
 
 void vdpConnectIo(struct Vdp *vdp, struct Io* io)
@@ -66,9 +76,9 @@ void vdpUpdate(struct Vdp *vdp, s32 cycles)
 	}
 }
 
-void vdpDisplayGraphics(struct Vdp* vdp)
+void vdpDisplayGraphics(struct Vdp* vdp, sfRenderWindow *window)
 {
-
+	sfRenderWindow_drawSprite(window, vdp->frame, NULL);
 }
 
 void vdpRender(struct Vdp* vdp)
@@ -99,7 +109,7 @@ void vdpSetMode(struct Vdp* vdp)
 
 void vdpBufferPixels(struct Vdp* vdp)
 {
-
+	sfTexture_updateFromImage(vdp->framebuffer, vdp->pixels, 0, 0);
 }
 
 u8 vdpIsDisplayVisible(struct Vdp* vdp)
