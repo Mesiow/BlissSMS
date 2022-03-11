@@ -217,6 +217,8 @@ void incMemIx(struct Z80* z80);
 void addMemIx(struct Z80* z80, u8* reg);
 void decMemIx(struct Z80* z80);
 
+void orMemIx(struct Z80* z80);
+
 //Bit ix instructions
 void bitIx(struct Z80* z80, u8 bit);
 

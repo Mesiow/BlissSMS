@@ -492,6 +492,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xEC: callCond(z80, getFlag(z80, FLAG_PV)); break;
 		case 0xFC: callCond(z80, getFlag(z80, FLAG_S));  break;
 
+		case 0xC0: retCond(z80, getFlag(z80, FLAG_Z) == 0); break;
 		case 0xC8: retCond(z80, getFlag(z80, FLAG_Z)); break;
 		case 0xC9: ret(z80); break;
 		case 0xD0: retCond(z80, getFlag(z80, FLAG_C) == 0); break;
@@ -748,6 +749,9 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 
 		case 0x21: loadReg16(z80, &z80->ix); z80->cycles += 4; break;
 
+		//Logical
+		case 0xB6: orMemIx(z80); break;
+
 		case 0xE1: pop(z80, &z80->ix); break;
 		case 0xE5: push(z80, &z80->ix); break;
 		default:
@@ -761,8 +765,10 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		case 0x56: bitIx(z80, 2); break;
 		case 0x5E: bitIx(z80, 3); break;
 		case 0x6E: bitIx(z80, 5); break;
+		case 0x76: bitIx(z80, 6); break;
 		case 0x7E: bitIx(z80, 7); break;
 		default:
 			printf("--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
@@ -1805,6 +1811,17 @@ void decMemIx(struct Z80* z80)
 	z80WriteU8(z80, value, address);
 
 	z80->cycles += 19;
+}
+
+void orMemIx(struct Z80* z80)
+{
+	u8 offset = z80FetchU8(z80);
+	u16 address = z80->ix.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	or(z80, value);
+
+	z80->cycles += 15;
 }
 
 void bitIx(struct Z80* z80, u8 bit)
