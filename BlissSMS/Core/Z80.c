@@ -415,6 +415,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x24: incReg8(z80, &z80->hl.hi); break;
 		case 0x2C: incReg8(z80, &z80->hl.lo); break;
 		case 0x3C: incReg8(z80, &z80->af.hi); break;
+		case 0x34: incMemHl(z80); break;
 
 		//8 bit reg add
 		case 0x80: addReg8(z80, &z80->af.hi, z80->bc.hi); break;
@@ -1009,6 +1010,16 @@ void incReg8(struct Z80* z80, u8* reg)
 
 	(*reg)++;
 	z80->cycles = 4;
+}
+
+void incMemHl(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	incReg8(z80, &value);
+
+	z80WriteU8(z80, value, z80->hl.value);
+
+	z80->cycles += 7;
 }
 
 void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg)
