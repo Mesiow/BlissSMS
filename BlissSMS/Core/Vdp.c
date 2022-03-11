@@ -66,6 +66,11 @@ void vdpUpdate(struct Vdp *vdp, s32 cycles)
 	}
 }
 
+void vdpDisplayGraphics(struct Vdp* vdp)
+{
+
+}
+
 void vdpRender(struct Vdp* vdp)
 {
 	vdpSetMode(vdp);
@@ -90,6 +95,11 @@ void vdpSetMode(struct Vdp* vdp)
 	if (mode == 0x1) {
 		vdp->mode = Mode4;
 	}
+}
+
+void vdpBufferPixels(struct Vdp* vdp)
+{
+
 }
 
 u8 vdpIsDisplayVisible(struct Vdp* vdp)

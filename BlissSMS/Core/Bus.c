@@ -11,7 +11,7 @@ void memoryBusInit(struct Bus* bus)
 	memset(bus->systemRam, 0x0, SYSRAM_SIZE);
 	memset(bus->bios, 0x0, BIOS_SIZE);
 
-	bus->biosEnabled = 0;
+	bus->biosEnabled = 1;
 }
 
 void memoryBusLoadBios(struct Bus* bus, const char *path)

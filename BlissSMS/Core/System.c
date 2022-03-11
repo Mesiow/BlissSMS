@@ -5,6 +5,7 @@ void systemInit(struct System* sys)
 	//Memory init
 	ioInit(&sys->io);
 	memoryBusInit(&sys->bus);
+	memoryBusLoadBios(&sys->bus, "test_roms/bios13fx.sms");
 
 	//Cpu init
 	z80Init(&sys->z80);
@@ -17,9 +18,9 @@ void systemInit(struct System* sys)
 	ioConnectVdp(&sys->io, &sys->vdp);
 
 	cartInit(&sys->cart);
-	cartLoad(&sys->cart, "roms/Astro Flash (Japan).sms");
+	///cartLoad(&sys->cart, "roms/Astro Flash (Japan).sms");
 
-	memoryBusLoadCartridge(&sys->bus, &sys->cart);
+	//memoryBusLoadCartridge(&sys->bus, &sys->cart);
 
 	sys->running = 1;
 }
@@ -43,8 +44,13 @@ void systemRunEmulation(struct System* sys)
 			z80HandleInterrupts(z80, vdp);
 		}
 		//update joypad
-		//update graphics buffer
+		vdpBufferPixels(vdp);
 	}
+}
+
+void systemRenderGraphics(struct System* sys)
+{
+	vdpDisplayGraphics(&sys->vdp);
 }
 
 void systemFree(struct System* sys)

@@ -60,10 +60,12 @@ struct Vdp {
 void vdpInit(struct Vdp* vdp);
 void vdpConnectIo(struct Vdp *vdp, struct Io* io);
 void vdpUpdate(struct Vdp *vdp, s32 cycles);
+void vdpDisplayGraphics(struct Vdp* vdp);
 void vdpRender(struct Vdp* vdp);
 void vdpRenderBackground(struct Vdp* vdp);
 void vdpRenderSprites(struct Vdp* vdp);
 void vdpSetMode(struct Vdp* vdp);
+void vdpBufferPixels(struct Vdp* vdp);
 u8 vdpIsDisplayVisible(struct Vdp* vdp);
 u8 vdpIsDisplayActive(struct Vdp* vdp);
 
