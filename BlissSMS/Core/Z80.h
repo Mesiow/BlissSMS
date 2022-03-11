@@ -187,6 +187,7 @@ void in(struct Z80* z80, u8 sourcePort, u8* destReg, u8 opcode);
 
 void otir(struct Z80* z80);
 void ldir(struct Z80* z80);
+void ldi(struct Z80* z80);
 
 //Misc
 void cpl(struct Z80* z80);

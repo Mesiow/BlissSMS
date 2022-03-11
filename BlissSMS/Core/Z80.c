@@ -827,6 +827,7 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0x7D: retn(z80); break;
 
 		//I/O instructions
+		case 0xA0: ldi(z80); break;
 		case 0xA3: outi(z80); break;
 		case 0xB0: ldir(z80); break;
 		case 0xB3: otir(z80); break;
@@ -1523,6 +1524,21 @@ void ldir(struct Z80* z80)
 			z80->pc -= 2;
 	}
 	z80ClearFlag(z80, (FLAG_N | FLAG_PV | FLAG_H));
+}
+
+void ldi(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	z80WriteU8(z80, value, z80->de.value);
+
+	z80->hl.value++;
+	z80->de.value++;
+	z80->bc.value--;
+
+	z80AffectFlag(z80, z80->bc.value != 0, FLAG_PV);
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+
+	z80->cycles = 16;
 }
 
 void cpl(struct Z80* z80)
