@@ -301,8 +301,17 @@ u16 z80Clock(struct Z80* z80)
 			z80->process_interrupt_delay = 0;
 
 		cpmHandleSysCalls(z80);
-
+		printf("pc: 0x%04X", z80->pc);
+	
+		if (z80->pc == 0) {
+			printf("prelim test error");
+			z80->halted = 1;
+		}
 		u8 opcode = z80ReadU8(z80, z80->pc);
+		printf("  opcode: 0x%02X\n", opcode);
+		if (z80->pc == 0) {
+			return;
+		}
 		z80->pc++;
 
 		executeInstruction(z80, opcode);
@@ -377,6 +386,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xFE: cp(z80, z80FetchU8(z80)); z80->cycles += 3; break;
 		case 0x27: daa(z80); break;
 		case 0x3F: ccf(z80); break;
+		case 0x37: scf(z80); break;
 
 		//Shifts
 		case 0x07: rlca(z80); break;
@@ -406,7 +416,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x1E: loadReg8(z80, &z80->de.lo); break;
 		case 0x26: loadReg8(z80, &z80->hl.hi); break;
 		case 0x2E: loadReg8(z80, &z80->hl.lo); break;
-		case 0x3E: loadReg8(z80, &z80->af.hi); break;
+		case 0x3E: loadReg8(z80, &z80->af.hi); printf("ld a, *\n"); break;
 		case 0x36: loadHL8(z80); break;
 
 		case 0x2A: load16Reg(z80, &z80->hl); break;
@@ -481,6 +491,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x29: addReg16(z80, &z80->hl, &z80->hl); break;
 		case 0x39: addReg16(z80, &z80->hl, &z80->sp); break;
 
+		case 0x03: incReg16(z80, &z80->bc); break;
 		case 0x13: incReg16(z80, &z80->de); break;
 		case 0x23: incReg16(z80, &z80->hl); break;
 		case 0x0B: decReg16(z80, &z80->bc); break;
@@ -833,6 +844,7 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x29: addReg16(z80, &z80->ix, &z80->ix); break;
 		case 0x39: addReg16(z80, &z80->ix, &z80->sp); break;
 
+		case 0x23: incReg16(z80, &z80->ix); z80->cycles += 4; break;
 		case 0x34: incMemIx(z80); break;
 		case 0x35: decMemIx(z80); break;
 
@@ -1400,7 +1412,7 @@ void jpCond(struct Z80* z80, u8 cond)
 
 void jpMemHl(struct Z80* z80)
 {
-	z80->pc = z80ReadU16(z80, z80->hl.value);
+	z80->pc = z80->hl.value;
 	z80->cycles = 4;
 }
 
@@ -1736,6 +1748,9 @@ void halt(struct Z80* z80)
 void cp(struct Z80* z80, u8 reg)
 {
 	u8 result = z80->af.hi - reg;
+	if (reg == 2) {
+		printf("cp 2\n");
+	}
 
 	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
@@ -1831,6 +1846,14 @@ void neg(struct Z80* z80)
 
 	z80->af.hi = result;
 	z80->cycles = 8;
+}
+
+void scf(struct Z80* z80)
+{
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	z80SetFlag(z80, FLAG_C);
+
+	z80->cycles = 4;
 }
 
 void rrc(struct Z80* z80, u8* reg)
@@ -2020,7 +2043,7 @@ void orMemIx(struct Z80* z80)
 
 void jpMemIx(struct Z80* z80)
 {
-	z80->pc = z80ReadU16(z80, z80->ix.value);
+	z80->pc = z80->ix.value;
 	z80->cycles = 8;
 }
 

@@ -217,6 +217,7 @@ void cpMemHl(struct Z80* z80);
 void daa(struct Z80* z80);
 void ccf(struct Z80* z80);
 void neg(struct Z80* z80);
+void scf(struct Z80* z80);
 
 //Bit instructions
 void rrc(struct Z80* z80, u8* reg);
