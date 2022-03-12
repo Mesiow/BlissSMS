@@ -427,7 +427,13 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x4C: loadReg(z80, &z80->bc.lo, z80->hl.hi); break;
 		case 0x4D: loadReg(z80, &z80->bc.lo, z80->hl.lo); break;
 		case 0x4F: loadReg(z80, &z80->bc.lo, z80->af.hi); break;
+		case 0x50: loadReg(z80, &z80->de.hi, z80->bc.hi); break;
+		case 0x51: loadReg(z80, &z80->de.hi, z80->bc.lo); break;
+		case 0x52: loadReg(z80, &z80->de.hi, z80->de.hi); break;
+		case 0x53: loadReg(z80, &z80->de.hi, z80->de.lo); break;
 		case 0x54: loadReg(z80, &z80->de.hi, z80->hl.hi); break;
+		case 0x55: loadReg(z80, &z80->de.hi, z80->hl.lo); break;
+		case 0x57: loadReg(z80, &z80->de.hi, z80->af.hi); break;
 		case 0x5B: loadReg(z80, &z80->de.lo, z80->de.lo); break;
 		case 0x5D: loadReg(z80, &z80->de.lo, z80->hl.lo); break;
 		case 0x5F: loadReg(z80, &z80->de.lo, z80->af.hi); break;
@@ -580,8 +586,11 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xCC: callCond(z80, getFlag(z80, FLAG_Z)); break;
 		case 0xCD: call(z80); break;
 		case 0xC4: callCond(z80, getFlag(z80, FLAG_Z) == 0); break;
+		case 0xD4: callCond(z80, getFlag(z80, FLAG_C) == 0); break;
 		case 0xDC: callCond(z80, getFlag(z80, FLAG_C)); break;
+		case 0xE4: callCond(z80, getFlag(z80, FLAG_PV) == 0); break;
 		case 0xEC: callCond(z80, getFlag(z80, FLAG_PV)); break;
+		case 0xF4: callCond(z80, getFlag(z80, FLAG_S) == 0); break;
 		case 0xFC: callCond(z80, getFlag(z80, FLAG_S));  break;
 
 		case 0xC0: retCond(z80, getFlag(z80, FLAG_Z) == 0); break;
@@ -589,6 +598,10 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xC9: ret(z80); break;
 		case 0xD0: retCond(z80, getFlag(z80, FLAG_C) == 0); break;
 		case 0xD8: retCond(z80, getFlag(z80, FLAG_C)); break;
+		case 0xE0: retCond(z80, getFlag(z80, FLAG_PV) == 0); break;
+		case 0xE8: retCond(z80, getFlag(z80, FLAG_PV)); break;
+		case 0xF0: retCond(z80, getFlag(z80, FLAG_S) == 0); break;
+		case 0xF8: retCond(z80, getFlag(z80, FLAG_S)); break;
 
 		//Jumps
 		case 0xC2: jpCond(z80, getFlag(z80, FLAG_Z) == 0); break;
@@ -596,9 +609,11 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xCA: jpCond(z80, getFlag(z80, FLAG_Z)); break;
 		case 0xD2: jpCond(z80, getFlag(z80, FLAG_C) == 0); break;
 		case 0xDA: jpCond(z80, getFlag(z80, FLAG_C)); break;
+		case 0xE2: jpCond(z80, getFlag(z80, FLAG_PV) == 0); break;
 		case 0xE9: jpMemHl(z80); break;
 		case 0xEA: jpCond(z80, getFlag(z80, FLAG_PV)); break;
 		case 0xF2: jpCond(z80, getFlag(z80, FLAG_S) == 0); break;
+		case 0xFA: jpCond(z80, getFlag(z80, FLAG_S)); break;
 
 		//Restarts
 		case 0xC7: rst(z80, 0x00); break;
@@ -846,6 +861,8 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 
 		//Logical
 		case 0xB6: orMemIx(z80); break;
+
+		case 0xE9: jpMemIx(z80); break;
 
 		case 0xE1: pop(z80, &z80->ix); break;
 		case 0xE5: push(z80, &z80->ix); break;
@@ -1999,6 +2016,12 @@ void orMemIx(struct Z80* z80)
 	or(z80, value);
 
 	z80->cycles += 15;
+}
+
+void jpMemIx(struct Z80* z80)
+{
+	z80->pc = z80ReadU16(z80, z80->ix.value);
+	z80->cycles = 8;
 }
 
 void bitIx(struct Z80* z80, u8 bit)
