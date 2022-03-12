@@ -413,6 +413,12 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x3A: load16A(z80); break;
 
 		//Load src reg into dest reg
+		case 0x40: loadReg(z80, &z80->bc.hi, z80->bc.hi); break;
+		case 0x41: loadReg(z80, &z80->bc.hi, z80->bc.lo); break;
+		case 0x42: loadReg(z80, &z80->bc.hi, z80->de.hi); break;
+		case 0x43: loadReg(z80, &z80->bc.hi, z80->de.lo); break;
+		case 0x44: loadReg(z80, &z80->bc.hi, z80->hl.hi); break;
+		case 0x45: loadReg(z80, &z80->bc.hi, z80->hl.lo); break;
 		case 0x47: loadReg(z80, &z80->bc.hi, z80->af.hi); break;
 		case 0x48: loadReg(z80, &z80->bc.lo, z80->bc.hi); break;
 		case 0x49: loadReg(z80, &z80->bc.lo, z80->bc.lo); break;
