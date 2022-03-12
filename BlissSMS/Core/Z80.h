@@ -125,6 +125,7 @@ void load16A(struct Z80* z80);
 void loadReg(struct Z80* z80, u8* destReg, u8 sourceReg);
 void loadRegMem(struct Z80* z80, u8* destReg, union Register* reg);
 void loadReg8Mem(struct Z80* z80, union Register mem, u8 reg);
+void loadAWithR(struct Z80* z80);
 
 //Arithmetic
 void incReg16(struct Z80* z80, union Register* reg);

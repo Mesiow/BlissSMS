@@ -782,6 +782,12 @@ void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		//Loads
+		case 0x43: loadMemReg16(z80, &z80->bc); break;
+		case 0x53: loadMemReg16(z80, &z80->de); break;
+		case 0x73: loadMemReg16(z80, &z80->sp); break;
+		case 0x5F: loadAWithR(z80); break;
+
 		case 0x40: in(z80, z80->bc.lo, &z80->bc.hi, opcode); break;
 		case 0x48: in(z80, z80->bc.lo, &z80->bc.lo, opcode); break;
 		case 0x50: in(z80, z80->bc.lo, &z80->de.hi, opcode); break;
@@ -960,6 +966,18 @@ void loadReg8Mem(struct Z80* z80, union Register mem, u8 reg)
 {
 	z80WriteU8(z80, reg, mem.value);
 	z80->cycles = 7;
+}
+
+void loadAWithR(struct Z80* z80)
+{
+	z80->af.hi = z80->ir.lo;
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	z80AffectFlag(z80, z80IsSigned8(z80->ir.lo), FLAG_S);
+	z80AffectFlag(z80, z80->ir.lo == 0, FLAG_Z);
+	z80AffectFlag(z80, z80->iff2, FLAG_PV);
+
+	z80->cycles = 9;
 }
 
 void incReg16(struct Z80* z80, union Register* reg)
