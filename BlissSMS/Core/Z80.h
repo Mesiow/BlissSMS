@@ -14,6 +14,17 @@
 
 static int debug = 0;
 
+//Used for testing z80 core by itself
+struct Cpm {
+	u8 memory[0x10000];
+};
+
+void cpmLoadRom(struct Z80* z80, const char *path);
+void cpmHandleSysCalls(struct Z80* z80);
+void cpmWriteMem8(struct Z80* z80, u16 address, u8 value);
+u8 cpmReadMem8(struct Z80* z80, u16 address);
+
+
 union Register{
 	struct {
 		u8 lo;
@@ -59,6 +70,9 @@ struct Z80 {
 
 	struct Bus* bus;
 	struct Io* io;
+
+	struct Cpm cpm;
+	u8 cpm_stub_enabled;
 };
 
 void z80Init(struct Z80* z80);
@@ -126,6 +140,7 @@ void loadReg(struct Z80* z80, u8* destReg, u8 sourceReg);
 void loadRegMem(struct Z80* z80, u8* destReg, union Register* reg);
 void loadReg8Mem(struct Z80* z80, union Register mem, u8 reg);
 void loadAWithR(struct Z80* z80);
+void loadSpReg(struct Z80* z80, union Register* reg);
 
 //Arithmetic
 void incReg16(struct Z80* z80, union Register* reg);

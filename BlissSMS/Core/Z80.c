@@ -4,8 +4,70 @@
 #include "Vdp.h"
 
 
+void cpmLoadRom(struct Z80* z80, const char *path)
+{
+	FILE* rom = fopen(path, "rb");
+	if (rom == NULL) {
+		printf("---CP/M file could not be found---\n");
+		return;
+	}
+	//Rom size
+	fseek(rom, 0, SEEK_END);
+	u32 file_size = ftell(rom);
+	fseek(rom, 0, SEEK_SET);
+	printf("file size: %d\n", file_size);
+
+	u8* temp = (u8*)malloc(file_size * sizeof(u8));
+	if (temp != NULL) {
+		fread(temp, sizeof(u8), file_size, rom);
+		for (s32 i = 0; i < file_size; i++) {
+			z80->cpm.memory[i + 0x100] = temp[i];
+		}
+		free(temp);
+		printf("CP/M Rom sucessfully loaded\n");
+	}
+	fclose(rom);
+}
+
+void cpmHandleSysCalls(struct Z80* z80)
+{
+	if (z80->pc == 0x5) {
+		if (z80->bc.lo == 0x2) {
+			printf("%c", z80->de.lo);
+		}
+		else if (z80->bc.lo == 0x9) {
+			u16 i = z80->de.value;
+			while (cpmReadMem8(z80, i) != '$') {
+				printf("%c", cpmReadMem8(z80, i));
+				i++;
+			}
+		}
+	}
+}
+
+void cpmWriteMem8(struct Z80* z80, u16 address, u8 value)
+{
+	z80->cpm.memory[address] = value;
+}
+
+u8 cpmReadMem8(struct Z80* z80, u16 address)
+{
+	return z80->cpm.memory[address];
+}
+
 void z80Init(struct Z80* z80)
 {
+	z80->cpm_stub_enabled = 1;
+
+	if (z80->cpm_stub_enabled) {
+		//Cpm stub for testing our z80 core
+		memset(z80->cpm.memory, 0x0, 0x10000);
+		z80->cpm.memory[0x7] = 0xC9; //RET at 0x7
+		z80->pc = 0x100;
+	}
+	else
+		z80->pc = 0x0;
+
 	z80->shadowedregs.af.value = 0x0;
 	z80->shadowedregs.bc.value = 0x0;
 	z80->shadowedregs.de.value = 0x0;
@@ -19,7 +81,6 @@ void z80Init(struct Z80* z80)
 	z80->iy.value = 0x0;
 	z80->ir.value = 0x0;
 	z80->sp = 0xDFF0;
-	z80->pc = 0x0;
 
 	z80->interrupt_mode = One;
 	z80->cycles = 0;
@@ -180,22 +241,39 @@ u8 z80HalfBorrowOccured16(u16 op1, u16 op2)
 
 void z80WriteU8(struct Z80* z80, u8 value, u16 address)
 {
-	memoryBusWriteU8(z80->bus, value, address);
+	if (z80->cpm_stub_enabled) {
+		cpmWriteMem8(z80, address, value);
+	}
+	else
+		memoryBusWriteU8(z80->bus, value, address);
 }
 
 u8 z80ReadU8(struct Z80* z80, u16 address)
 {
+	if (z80->cpm_stub_enabled) {
+		return cpmReadMem8(z80, address);
+	}
 	return memoryBusReadU8(z80->bus, address);
 }
 
 u8 z80FetchU8(struct Z80* z80)
 {
+	if (z80->cpm_stub_enabled) {
+		u8 data = cpmReadMem8(z80, z80->pc++);
+		return data;
+	}
 	u8 data = memoryBusReadU8(z80->bus, z80->pc++);
 	return data;
 }
 
 u16 z80ReadU16(struct Z80* z80, u16 address)
 {
+	if (z80->cpm_stub_enabled) {
+		u8 lo = cpmReadMem8(z80, address);
+		u8 hi = cpmReadMem8(z80, address + 1);
+
+		return ((hi << 8) | lo);
+	}
 	u8 lo = memoryBusReadU8(z80->bus, address);
 	u8 hi = memoryBusReadU8(z80->bus, address + 1);
 
@@ -204,6 +282,12 @@ u16 z80ReadU16(struct Z80* z80, u16 address)
 
 u16 z80FetchU16(struct Z80* z80)
 {
+	if (z80->cpm_stub_enabled) {
+		u8 lo = cpmReadMem8(z80, z80->pc++);
+		u8 hi = cpmReadMem8(z80, z80->pc++);
+
+		return ((hi << 8) | lo);
+	}
 	u8 lo = memoryBusReadU8(z80->bus, z80->pc++);
 	u8 hi = memoryBusReadU8(z80->bus, z80->pc++);
 
@@ -216,20 +300,10 @@ u16 z80Clock(struct Z80* z80)
 		if (z80->process_interrupt_delay)
 			z80->process_interrupt_delay = 0;
 
-		/*if (z80->pc == 0x2778) {
-			printf("menu loop\n");
-		}*/
-		
+		cpmHandleSysCalls(z80);
+
 		u8 opcode = z80ReadU8(z80, z80->pc);
 		z80->pc++;
-
-		/*if (z80->pc == 0x182E) {
-			printf("hit 182E\n");
-			debug = 1;
-		}
-		if (debug) {
-			printf("pc: 0x%04X\n", z80->pc);
-		}*/
 
 		executeInstruction(z80, opcode);
 	}
@@ -295,6 +369,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x11: loadReg16(z80, &z80->de); break;
 		case 0x21: loadReg16(z80, &z80->hl); break;
 		case 0x31: loadReg16(z80, &z80->sp); break;
+		case 0xF9: loadSpReg(z80, &z80->hl); break;
 
 		//Misc
 		case 0x2F: cpl(z80); break;
@@ -466,6 +541,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xAD: xor(z80, z80->hl.lo); break;
 		case 0xAE: xorMemHl(z80); break;
 		case 0xAF: xor(z80, z80->af.hi); break;
+		case 0xEE: xor(z80, z80FetchU8(z80)); z80->cycles += 3; break;
 
 		case 0xB0: or(z80, z80->bc.hi); break;
 		case 0xB1: or(z80, z80->bc.lo); break;
@@ -533,7 +609,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xFB: ei(z80); break;
 
 		default:
-			printf("--Unimplemented Main Instruction--: 0x%02X\n", opcode);
+			printf("\n--Unimplemented Main Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
 			break;
@@ -708,7 +784,7 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 		case 0xBF: res(z80, &z80->af.hi, 7); break;
 
 		default:
-			printf("--Unimplemented Bit Instruction--: 0x%02X\n", opcode);
+			printf("\n--Unimplemented Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
 			break;
@@ -756,7 +832,7 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0xE1: pop(z80, &z80->ix); break;
 		case 0xE5: push(z80, &z80->ix); break;
 		default:
-			printf("--Unimplemented Ix Instruction--: 0x%02X\n", opcode);
+			printf("\n--Unimplemented Ix Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
 			break;
@@ -772,7 +848,7 @@ void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 		case 0x76: bitIx(z80, 6); break;
 		case 0x7E: bitIx(z80, 7); break;
 		default:
-			printf("--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
+			printf("\n--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
 			break;
@@ -787,6 +863,7 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0x53: loadMemReg16(z80, &z80->de); break;
 		case 0x73: loadMemReg16(z80, &z80->sp); break;
 		case 0x5F: loadAWithR(z80); break;
+		case 0x7B: load16Reg(z80, &z80->sp); z80->cycles += 4; break;
 
 		case 0x40: in(z80, z80->bc.lo, &z80->bc.hi, opcode); break;
 		case 0x48: in(z80, z80->bc.lo, &z80->bc.lo, opcode); break;
@@ -840,7 +917,7 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0xB3: otir(z80); break;
 
 		default:
-			printf("--Unimplemented Extended Instruction--: 0x%02X\n", opcode);
+			printf("\n--Unimplemented Extended Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
 			break;
@@ -853,7 +930,7 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 		case 0xE1: pop(z80, &z80->iy); break;
 		case 0xE5: push(z80, &z80->iy); break;
 		default:
-			printf("--Unimplemented Iy Instruction--: 0x%02X\n", opcode);
+			printf("\n--Unimplemented Iy Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
 			break;
@@ -864,7 +941,7 @@ void executeIyBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
 		default:
-			printf("--Unimplemented Iy Bit Instruction--: 0x%02X\n", opcode);
+			printf("\n--Unimplemented Iy Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
 			break;
@@ -978,6 +1055,12 @@ void loadAWithR(struct Z80* z80)
 	z80AffectFlag(z80, z80->iff2, FLAG_PV);
 
 	z80->cycles = 9;
+}
+
+void loadSpReg(struct Z80* z80, union Register* reg)
+{
+	z80->sp = reg->value;
+	z80->cycles = 6;
 }
 
 void incReg16(struct Z80* z80, union Register* reg)
