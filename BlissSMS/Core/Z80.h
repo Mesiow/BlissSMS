@@ -157,6 +157,8 @@ void adcReg16(struct Z80* z80, union Register* destReg, union Register* sourceRe
 
 void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg);
 void subMemHl(struct Z80* z80, u8* destReg);
+void sbcReg8(struct Z80* z80, u8* destReg, u8 sourceReg);
+void sbcMemHl(struct Z80* z80, u8* destReg);
 void sbcReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg);
 
 //Branches/Jumps/Returns
@@ -172,6 +174,7 @@ void retn(struct Z80* z80);
 void retCond(struct Z80* z80, u8 cond);
 void jp(struct Z80* z80);
 void jpCond(struct Z80* z80, u8 cond);
+void jpMemHl(struct Z80* z80);
 
 //Logical
 void xor(struct Z80* z80, u8 reg);

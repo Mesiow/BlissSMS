@@ -519,6 +519,15 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x96: subMemHl(z80, &z80->af.hi); break;
 		case 0xD6: subReg8(z80, &z80->af.hi, z80FetchU8(z80)); z80->cycles += 3; break;
 
+		case 0x98: sbcReg8(z80, &z80->af.hi, z80->bc.hi); break;
+		case 0x99: sbcReg8(z80, &z80->af.hi, z80->bc.lo); break;
+		case 0x9A: sbcReg8(z80, &z80->af.hi, z80->de.hi); break;
+		case 0x9B: sbcReg8(z80, &z80->af.hi, z80->de.lo); break;
+		case 0x9C: sbcReg8(z80, &z80->af.hi, z80->hl.hi); break;
+		case 0x9D: sbcReg8(z80, &z80->af.hi, z80->hl.lo); break;
+		case 0x9E: sbcMemHl(z80, &z80->af.hi); break;
+		case 0x9F: sbcReg8(z80, &z80->af.hi, z80->af.hi); break;
+
 		//Jumps/Branches/Rets
 		case 0x10: djnz(z80); break;
 		case 0x18: jrImm(z80); break;
@@ -579,6 +588,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xC8: retCond(z80, getFlag(z80, FLAG_Z)); break;
 		case 0xC9: ret(z80); break;
 		case 0xD0: retCond(z80, getFlag(z80, FLAG_C) == 0); break;
+		case 0xD8: retCond(z80, getFlag(z80, FLAG_C)); break;
 
 		//Jumps
 		case 0xC2: jpCond(z80, getFlag(z80, FLAG_Z) == 0); break;
@@ -586,6 +596,8 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0xCA: jpCond(z80, getFlag(z80, FLAG_Z)); break;
 		case 0xD2: jpCond(z80, getFlag(z80, FLAG_C) == 0); break;
 		case 0xDA: jpCond(z80, getFlag(z80, FLAG_C)); break;
+		case 0xE9: jpMemHl(z80); break;
+		case 0xEA: jpCond(z80, getFlag(z80, FLAG_PV)); break;
 		case 0xF2: jpCond(z80, getFlag(z80, FLAG_S) == 0); break;
 
 		//Restarts
@@ -1208,6 +1220,31 @@ void subMemHl(struct Z80* z80, u8* destReg)
 	z80->cycles += 3;
 }
 
+void sbcReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
+{
+	u8 carry = getFlag(z80, FLAG_C);
+	u8 dest_reg = (*destReg);
+	u8 result = dest_reg - sourceReg - carry;
+
+	z80SetFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
+	z80AffectFlag(z80, result == 0, FLAG_Z);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(dest_reg, sourceReg - carry), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromSub8(dest_reg, sourceReg - carry), FLAG_PV);
+	z80AffectFlag(z80, z80BorrowOccured8(dest_reg + carry, sourceReg), FLAG_C);
+	
+	*destReg = result;
+	z80->cycles = 4;
+}
+
+void sbcMemHl(struct Z80* z80, u8* destReg)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	sbcReg8(z80, destReg, value);
+
+	z80->cycles += 3;
+}
+
 void sbcReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg)
 {
 	u8 carry = getFlag(z80, FLAG_C);
@@ -1342,6 +1379,12 @@ void jpCond(struct Z80* z80, u8 cond)
 		z80->pc += 2;
 		z80->cycles = 10;
 	}
+}
+
+void jpMemHl(struct Z80* z80)
+{
+	z80->pc = z80ReadU16(z80, z80->hl.value);
+	z80->cycles = 4;
 }
 
 void xor(struct Z80* z80, u8 reg)
