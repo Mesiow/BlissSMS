@@ -543,6 +543,15 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x87: addReg8(z80, &z80->af.hi, z80->af.hi); break;
 		case 0xC6: addReg8(z80, &z80->af.hi, z80FetchU8(z80)); z80->cycles += 3; break;
 
+		case 0x88: adcReg8(z80, &z80->af.hi, z80->bc.hi); break;
+		case 0x89: adcReg8(z80, &z80->af.hi, z80->bc.lo); break;
+		case 0x8A: adcReg8(z80, &z80->af.hi, z80->de.hi); break;
+		case 0x8B: adcReg8(z80, &z80->af.hi, z80->de.lo); break;
+		case 0x8C: adcReg8(z80, &z80->af.hi, z80->hl.hi); break;
+		case 0x8D: adcReg8(z80, &z80->af.hi, z80->hl.lo); break;
+		case 0x8E: adcMemHl(z80, &z80->af.hi); break;
+		case 0x8F: adcReg8(z80, &z80->af.hi, z80->af.hi); break;
+
 		//8 bit reg sub
 		case 0x90: subReg8(z80, &z80->af.hi, z80->bc.hi); break;
 		case 0x91: subReg8(z80, &z80->af.hi, z80->bc.lo); break;
@@ -1248,6 +1257,31 @@ void adcReg16(struct Z80* z80, union Register* destReg, union Register* sourceRe
 
 	destReg->value = result;
 	z80->cycles = 15;
+}
+
+void adcMemHl(struct Z80* z80, u8* destReg)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	adcReg8(z80, destReg, value);
+
+	z80->cycles += 3;
+}
+
+void adcReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
+{
+	u8 carry = getFlag(z80, FLAG_C);
+	u8 dest_reg = (*destReg);
+	u8 result = dest_reg + sourceReg + carry;
+
+	z80ClearFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
+	z80AffectFlag(z80, result == 0, FLAG_Z);
+	z80AffectFlag(z80, z80HalfCarryOccured8(dest_reg, sourceReg + carry), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromAdd8(dest_reg, sourceReg + carry), FLAG_PV);
+	z80AffectFlag(z80, z80CarryOccured8(dest_reg, sourceReg + carry), FLAG_C);
+
+	*destReg = result;
+	z80->cycles = 4;
 }
 
 void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
