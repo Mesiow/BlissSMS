@@ -73,7 +73,10 @@ struct Z80 {
 
 	struct Cpm cpm;
 	u8 cpm_stub_enabled;
+	u8 cpm_test_finished;
 };
+
+void z80DebugOutput(struct Z80* z80);
 
 void z80Init(struct Z80* z80);
 void z80ConnectBus(struct Z80 *z80, struct Bus* bus);
@@ -81,6 +84,7 @@ void z80ConnectIo(struct Z80 *z80, struct Io* io);
 void z80AffectFlag(struct Z80* z80, u8 cond, u8 flags);
 void z80SetFlag(struct Z80* z80, u8 flags);
 void z80ClearFlag(struct Z80* z80, u8 flags);
+void z80ClearUnusedFlagBits(struct Z80* z80);
 u8 getFlag(struct Z80* z80, u8 flag);
 
 void z80HandleInterrupts(struct Z80* z80, struct Vdp *vdp);
@@ -229,6 +233,7 @@ void bit(struct Z80* z80, u8 reg, u8 bit);
 void bitMemHl(struct Z80* z80, u8 bitToTest);
 void res(struct Z80* z80, u8* reg, u8 bit);
 void resMemHl(struct Z80* z80, u8 bit);
+void set(struct Z80* z80, u8* reg, u8 bit);
 
 //Ix instructions
 void loadRegIx(struct Z80* z80, u8* reg);
@@ -246,6 +251,12 @@ void jpMemIx(struct Z80* z80);
 
 //Bit ix instructions
 void bitIx(struct Z80* z80, u8 bit);
+
+
+//Iy instructions
+void loadRegIy(struct Z80* z80, u8* reg);
+
+void jpMemIy(struct Z80* z80);
 
 //Interrupt related instructions
 void di(struct Z80* z80);

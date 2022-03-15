@@ -24,7 +24,7 @@ void cpmLoadRom(struct Z80* z80, const char *path)
 			z80->cpm.memory[i + 0x100] = temp[i];
 		}
 		free(temp);
-		printf("CP/M Rom sucessfully loaded\n");
+		printf("Test %s loaded.\n", path);
 	}
 	fclose(rom);
 }
@@ -55,6 +55,14 @@ u8 cpmReadMem8(struct Z80* z80, u16 address)
 	return z80->cpm.memory[address];
 }
 
+void z80DebugOutput(struct Z80* z80)
+{
+	printf("PC: %04X, AF: %04X, BC: %04X, DE: %04X, HL: %04X, SP: %04X, "
+		"IX: %04X, IY: %04X, I: %02X, R: %02X\n",
+		z80->pc, z80->af.value, z80->bc.value, z80->de.value, z80->hl.value, z80->sp,
+		z80->ix.value, z80->iy.value, z80->ir.hi, z80->ir.lo);
+}
+
 void z80Init(struct Z80* z80)
 {
 	z80->cpm_stub_enabled = 1;
@@ -62,25 +70,36 @@ void z80Init(struct Z80* z80)
 	if (z80->cpm_stub_enabled) {
 		//Cpm stub for testing our z80 core
 		memset(z80->cpm.memory, 0x0, 0x10000);
+		// inject "out 1,a" at 0x0000 (signal to stop the test)
+		z80->cpm.memory[0x0000] = 0xD3;
+		z80->cpm.memory[0x0001] = 0x00;
+
+		// inject "in a,0" at 0x0005 (signal to output some characters)
+		z80->cpm.memory[0x0005] = 0xDB;
+		z80->cpm.memory[0x0006] = 0x00;
 		z80->cpm.memory[0x7] = 0xC9; //RET at 0x7
 		z80->pc = 0x100;
+		z80->af.value = 0xFFFF;
+		z80->sp = 0xFFFF;
 	}
-	else
+	else {
 		z80->pc = 0x0;
+		z80->sp = 0xDFF0;
+		z80->af.value = 0x0;
+	}
+
 
 	z80->shadowedregs.af.value = 0x0;
 	z80->shadowedregs.bc.value = 0x0;
 	z80->shadowedregs.de.value = 0x0;
 	z80->shadowedregs.hl.value = 0x0;
 
-	z80->af.value = 0x0;
 	z80->bc.value = 0x0;
 	z80->de.value = 0x0;
 	z80->hl.value = 0x0;
 	z80->ix.value = 0x0;
 	z80->iy.value = 0x0;
 	z80->ir.value = 0x0;
-	z80->sp = 0xDFF0;
 
 	z80->interrupt_mode = One;
 	z80->cycles = 0;
@@ -301,17 +320,17 @@ u16 z80Clock(struct Z80* z80)
 			z80->process_interrupt_delay = 0;
 
 		cpmHandleSysCalls(z80);
-		printf("pc: 0x%04X", z80->pc);
 	
-		if (z80->pc == 0) {
-			printf("prelim test error");
-			z80->halted = 1;
+		//Prelim test finished
+		if (z80->cpm_stub_enabled) {
+			if (z80->pc == 0) {
+				z80->halted = 1;
+				return;
+			}
 		}
 		u8 opcode = z80ReadU8(z80, z80->pc);
-		printf("  opcode: 0x%02X\n", opcode);
-		if (z80->pc == 0) {
-			return;
-		}
+	
+		//TODO: fix relative addressing by making offset signed
 		z80->pc++;
 
 		executeInstruction(z80, opcode);
@@ -416,7 +435,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x1E: loadReg8(z80, &z80->de.lo); break;
 		case 0x26: loadReg8(z80, &z80->hl.hi); break;
 		case 0x2E: loadReg8(z80, &z80->hl.lo); break;
-		case 0x3E: loadReg8(z80, &z80->af.hi); printf("ld a, *\n"); break;
+		case 0x3E: loadReg8(z80, &z80->af.hi); break;
 		case 0x36: loadHL8(z80); break;
 
 		case 0x2A: load16Reg(z80, &z80->hl); break;
@@ -494,6 +513,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x03: incReg16(z80, &z80->bc); break;
 		case 0x13: incReg16(z80, &z80->de); break;
 		case 0x23: incReg16(z80, &z80->hl); break;
+		case 0x33: incReg16(z80, &z80->sp); break;
 		case 0x0B: decReg16(z80, &z80->bc); break;
 		case 0x1B: decReg16(z80, &z80->de); break;
 		case 0x2B: decReg16(z80, &z80->hl); break;
@@ -827,6 +847,8 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 		case 0xBE: resMemHl(z80, 7); break;
 		case 0xBF: res(z80, &z80->af.hi, 7); break;
 
+		case 0xC7: set(z80, &z80->af.hi, 0); break;
+
 		default:
 			printf("\n--Unimplemented Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
@@ -974,6 +996,13 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 void executeIyInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		case 0x21: loadReg16(z80, &z80->iy); z80->cycles += 4; break;
+		case 0x23: incReg16(z80, &z80->iy); z80->cycles += 4; break;
+
+		case 0x7E: loadRegIy(z80, &z80->af.hi); break;
+
+		case 0xE9: jpMemIy(z80); break;
+
 		case 0xE1: pop(z80, &z80->iy); break;
 		case 0xE5: push(z80, &z80->iy); break;
 		default:
@@ -1748,9 +1777,6 @@ void halt(struct Z80* z80)
 void cp(struct Z80* z80, u8 reg)
 {
 	u8 result = z80->af.hi - reg;
-	if (reg == 2) {
-		printf("cp 2\n");
-	}
 
 	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
@@ -1766,6 +1792,8 @@ void cpMemHl(struct Z80* z80)
 {
 	u8 value = z80ReadU8(z80, z80->hl.value);
 	cp(z80, value);
+
+	z80->cycles += 3;
 }
 
 void daa(struct Z80* z80)
@@ -1961,9 +1989,15 @@ void resMemHl(struct Z80* z80, u8 bit)
 	z80->cycles += 7;
 }
 
+void set(struct Z80* z80, u8* reg, u8 bit)
+{
+	*reg = setBit(*reg, bit);
+	z80->cycles = 8;
+}
+
 void loadRegIx(struct Z80* z80, u8* reg)
 {
-	u8 offset = z80FetchU8(z80);
+	s8 offset = (s8)z80FetchU8(z80);
 	u8 value = z80ReadU8(z80, z80->ix.value + offset);
 
 	*reg = value;
@@ -2057,6 +2091,22 @@ void bitIx(struct Z80* z80, u8 bit)
 	z80SetFlag(z80, FLAG_H);
 
 	z80->cycles = 20;
+}
+
+void loadRegIy(struct Z80* z80, u8* reg)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	*reg = value;
+
+	z80->cycles = 19;
+}
+
+void jpMemIy(struct Z80* z80)
+{
+	z80->pc = z80->iy.value;
+	z80->cycles = 8;
 }
 
 void di(struct Z80* z80)
