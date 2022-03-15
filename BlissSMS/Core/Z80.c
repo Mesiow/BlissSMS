@@ -319,18 +319,15 @@ u16 z80Clock(struct Z80* z80)
 		if (z80->process_interrupt_delay)
 			z80->process_interrupt_delay = 0;
 
-		cpmHandleSysCalls(z80);
-	
 		//Prelim test finished
 		if (z80->cpm_stub_enabled) {
+			cpmHandleSysCalls(z80);
 			if (z80->pc == 0) {
 				z80->halted = 1;
 				return;
 			}
 		}
 		u8 opcode = z80ReadU8(z80, z80->pc);
-	
-		//TODO: fix relative addressing by making offset signed
 		z80->pc++;
 
 		executeInstruction(z80, opcode);
@@ -879,7 +876,7 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x6E: loadRegIx(z80, &z80->hl.lo); break;
 		case 0x7E: loadRegIx(z80, &z80->af.hi); break;
 
-		//Load reg8 into memory location ix + immediate u8
+		//Load reg8 into memory location ix + immediate s8
 		case 0x36: loadIxImm(z80); break;
 		case 0x70: loadIxReg(z80, z80->bc.hi); break;
 		case 0x71: loadIxReg(z80, z80->bc.lo); break;
@@ -2007,7 +2004,7 @@ void loadRegIx(struct Z80* z80, u8* reg)
 
 void loadIxReg(struct Z80* z80, u8 reg)
 {
-	u8 offset = z80FetchU8(z80);
+	s8 offset = (s8)z80FetchU8(z80);
 	u16 address = z80->ix.value + offset;
 
 	z80WriteU8(z80, reg, address);
@@ -2018,7 +2015,7 @@ void loadIxReg(struct Z80* z80, u8 reg)
 void loadIxImm(struct Z80* z80)
 {
 	//ix offset byte is first in memory
-	u8 offset = z80FetchU8(z80);
+	s8 offset = (s8)z80FetchU8(z80);
 	u16 address = z80->ix.value + offset;
 
 	u8 imm_value = z80FetchU8(z80);
@@ -2042,7 +2039,7 @@ void incMemIx(struct Z80* z80)
 
 void addMemIx(struct Z80* z80, u8* reg)
 {
-	u8 offset = z80FetchU8(z80);
+	s8 offset = (s8)z80FetchU8(z80);
 	u16 address = z80->ix.value + offset;
 
 	u8 value = z80ReadU8(z80, address);
@@ -2066,7 +2063,7 @@ void decMemIx(struct Z80* z80)
 
 void orMemIx(struct Z80* z80)
 {
-	u8 offset = z80FetchU8(z80);
+	s8 offset = (s8)z80FetchU8(z80);
 	u16 address = z80->ix.value + offset;
 
 	u8 value = z80ReadU8(z80, address);
