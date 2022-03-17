@@ -39,6 +39,9 @@
     <ClCompile Include="Core\Vdp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Log.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Z80.h">
@@ -60,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core\Vdp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

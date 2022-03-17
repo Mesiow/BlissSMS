@@ -150,6 +150,7 @@
     <ClCompile Include="Core\Bus.c" />
     <ClCompile Include="Core\Cart.c" />
     <ClCompile Include="Core\Io.c" />
+    <ClCompile Include="Core\Log.c" />
     <ClCompile Include="Core\System.c" />
     <ClCompile Include="Core\Util.c" />
     <ClCompile Include="Core\Vdp.c" />
@@ -160,6 +161,7 @@
     <ClInclude Include="Core\Bus.h" />
     <ClInclude Include="Core\Cart.h" />
     <ClInclude Include="Core\Io.h" />
+    <ClInclude Include="Core\Log.h" />
     <ClInclude Include="Core\System.h" />
     <ClInclude Include="Core\Util.h" />
     <ClInclude Include="Core\Vdp.h" />
