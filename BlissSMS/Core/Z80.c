@@ -58,9 +58,9 @@ u8 cpmReadMem8(struct Z80* z80, u16 address)
 void z80DebugOutput(struct Z80* z80)
 {
 	printf("PC: %04X, AF: %04X, BC: %04X, DE: %04X, HL: %04X, SP: %04X, "
-		"IX: %04X, IY: %04X, I: %02X, R: %02X\n",
+		"IX: %04X, IY: %04X, I: %02X, R: %02X Opcode: %02X %02X\n",
 		z80->pc, z80->af.value, z80->bc.value, z80->de.value, z80->hl.value, z80->sp,
-		z80->ix.value, z80->iy.value, z80->ir.hi, z80->ir.lo);
+		z80->ix.value, z80->iy.value, z80->ir.hi, z80->ir.lo, z80->opcode, z80->ext_opcode);
 }
 
 void z80Init(struct Z80* z80)
@@ -70,6 +70,7 @@ void z80Init(struct Z80* z80)
 	if (z80->cpm_stub_enabled) {
 		//Cpm stub for testing our z80 core
 		memset(z80->cpm.memory, 0x0, 0x10000);
+
 		// inject "out 1,a" at 0x0000 (signal to stop the test)
 		z80->cpm.memory[0x0000] = 0xD3;
 		z80->cpm.memory[0x0001] = 0x00;
@@ -78,9 +79,13 @@ void z80Init(struct Z80* z80)
 		z80->cpm.memory[0x0005] = 0xDB;
 		z80->cpm.memory[0x0006] = 0x00;
 		z80->cpm.memory[0x7] = 0xC9; //RET at 0x7
+
 		z80->pc = 0x100;
-		z80->af.value = 0xFFFF;
+		z80->af.value = 0xFFD7;
 		z80->sp = 0xFFFF;
+
+		z80->opcode = 0;
+		z80->ext_opcode = 0;
 	}
 	else {
 		z80->pc = 0x0;
@@ -100,6 +105,7 @@ void z80Init(struct Z80* z80)
 	z80->ix.value = 0x0;
 	z80->iy.value = 0x0;
 	z80->ir.value = 0x0;
+	z80->mem_ptr = 0x0;
 
 	z80->interrupt_mode = One;
 	z80->cycles = 0;
@@ -139,6 +145,12 @@ void z80SetFlag(struct Z80* z80, u8 flags)
 void z80ClearFlag(struct Z80* z80, u8 flags)
 {
 	z80->af.lo &= ~(flags & 0b1101'0111);
+}
+
+void z80ClearFlagCopyBits(struct Z80* z80)
+{
+	z80->af.lo = clearBit(z80->af.lo, 3);
+	z80->af.lo = clearBit(z80->af.lo, 5);
 }
 
 u8 getFlag(struct Z80* z80, u8 flag)
@@ -323,6 +335,7 @@ u16 z80Clock(struct Z80* z80)
 		if (z80->cpm_stub_enabled) {
 			cpmHandleSysCalls(z80);
 			if (z80->pc == 0) {
+				printf("Hit pc == 0\n");
 				z80->halted = 1;
 				return;
 			}
@@ -340,6 +353,7 @@ u16 z80Clock(struct Z80* z80)
 
 void executeInstruction(struct Z80* z80, u8 opcode)
 {
+	z80->opcode = opcode;
 	switch (opcode) {
 		case 0xCB: {
 			u8 bit_opcode = z80ReadU8(z80, z80->pc++);
@@ -362,6 +376,7 @@ void executeInstruction(struct Z80* z80, u8 opcode)
 		break;
 		case 0xED: {
 			u8 ext_opcode = z80ReadU8(z80, z80->pc++);
+			z80->ext_opcode = ext_opcode;
 			executeExtendedInstruction(z80, ext_opcode);
 		}
 		break;
@@ -382,6 +397,7 @@ void executeInstruction(struct Z80* z80, u8 opcode)
 			executeMainInstruction(z80, opcode);
 			break;
 	}
+	z80ClearFlagCopyBits(z80);
 }
 
 void executeMainInstruction(struct Z80* z80, u8 opcode)
@@ -502,7 +518,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x77: loadHlReg(z80, z80->af.hi); break;
 
 		//Arithmetic
-		case 0x19: addReg16(z80, &z80->hl, &z80->bc); break;
+		case 0x19: addReg16(z80, &z80->hl, &z80->de); break;
 		case 0x09: addReg16(z80, &z80->hl, &z80->bc); break;
 		case 0x29: addReg16(z80, &z80->hl, &z80->hl); break;
 		case 0x39: addReg16(z80, &z80->hl, &z80->sp); break;
@@ -1296,8 +1312,7 @@ void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 	z80AffectFlag(z80, z80OverflowFromSub8(dest_reg, sourceReg), FLAG_PV);
 	z80AffectFlag(z80, z80BorrowOccured8(dest_reg, sourceReg), FLAG_C);
 
-	(*destReg) -= sourceReg;
-
+	*destReg = result;
 	z80->cycles = 4;
 }
 
@@ -1320,7 +1335,7 @@ void sbcReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 	z80AffectFlag(z80, result == 0, FLAG_Z);
 	z80AffectFlag(z80, z80HalfBorrowOccured8(dest_reg, sourceReg - carry), FLAG_H);
 	z80AffectFlag(z80, z80OverflowFromSub8(dest_reg, sourceReg - carry), FLAG_PV);
-	z80AffectFlag(z80, z80BorrowOccured8(dest_reg + carry, sourceReg), FLAG_C);
+	z80AffectFlag(z80, z80BorrowOccured8(dest_reg, sourceReg + carry), FLAG_C);
 	
 	*destReg = result;
 	z80->cycles = 4;
@@ -1529,6 +1544,7 @@ void and(struct Z80* z80, u8 reg)
 
 	z80SetFlag(z80, FLAG_H);
 	z80ClearFlag(z80, (FLAG_C | FLAG_N));
+
 	z80->cycles = 4;
 }
 
@@ -1696,13 +1712,18 @@ void ina(struct Z80* z80)
 {
 	u8 io_port = z80FetchU8(z80);
 
-	u8 open_bus = ((io_port >= 0x0) && (io_port <= 0x3F));
-	if (open_bus) {
-		z80->af.hi = io_port;
+	if (z80->cpm_stub_enabled) {
+		z80->af.hi = 0xFF;
 	}
 	else {
-		u8 io_value = ioReadU8(z80->io, io_port);
-		z80->af.hi = io_value;
+		u8 open_bus = ((io_port >= 0x0) && (io_port <= 0x3F));
+		if (open_bus) {
+			z80->af.hi = io_port;
+		}
+		else {
+			u8 io_value = ioReadU8(z80->io, io_port);
+			z80->af.hi = io_value;
+		}
 	}
 
 	z80->cycles = 11;
@@ -1770,10 +1791,12 @@ void ldir(struct Z80* z80)
 		z80->de.value++;
 		z80->bc.value--;
 
-		if (z80->bc.value != 0)
+		if (z80->bc.value != 0) {
 			z80->pc -= 2;
+		}
+		z80AffectFlag(z80, z80->bc.value != 0, FLAG_PV);
 	}
-	z80ClearFlag(z80, (FLAG_N | FLAG_PV | FLAG_H));
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
 }
 
 void ldi(struct Z80* z80)
@@ -1794,8 +1817,8 @@ void ldi(struct Z80* z80)
 void cpl(struct Z80* z80)
 {
 	z80->af.hi = ~(z80->af.hi);
-
 	z80SetFlag(z80, (FLAG_N | FLAG_H));
+
 	z80->cycles = 4;
 }
 

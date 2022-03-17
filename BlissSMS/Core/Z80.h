@@ -12,8 +12,6 @@
 #define NMI_VECTOR 0x66
 #define INT_VECTOR 0x38
 
-static int debug = 0;
-
 //Used for testing z80 core by itself
 struct Cpm {
 	u8 memory[0x10000];
@@ -57,6 +55,7 @@ struct Z80 {
 	union Register ir;
 	u16 sp;
 	u16 pc;
+	u16 mem_ptr;
 
 	enum IntMode interrupt_mode;
 	u16 cycles;
@@ -67,6 +66,8 @@ struct Z80 {
 
 	u8 service_nmi;
 	u8 last_daa_operation;
+	u8 opcode;
+	u8 ext_opcode;
 
 	struct Bus* bus;
 	struct Io* io;
@@ -84,7 +85,7 @@ void z80ConnectIo(struct Z80 *z80, struct Io* io);
 void z80AffectFlag(struct Z80* z80, u8 cond, u8 flags);
 void z80SetFlag(struct Z80* z80, u8 flags);
 void z80ClearFlag(struct Z80* z80, u8 flags);
-void z80ClearUnusedFlagBits(struct Z80* z80);
+void z80ClearFlagCopyBits(struct Z80* z80);
 u8 getFlag(struct Z80* z80, u8 flag);
 
 void z80HandleInterrupts(struct Z80* z80, struct Vdp *vdp);
