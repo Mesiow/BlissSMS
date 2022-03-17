@@ -567,6 +567,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x8D: adcReg8(z80, &z80->af.hi, z80->hl.lo); break;
 		case 0x8E: adcMemHl(z80, &z80->af.hi); break;
 		case 0x8F: adcReg8(z80, &z80->af.hi, z80->af.hi); break;
+		case 0xCE: adcReg8(z80, &z80->af.hi, z80FetchU8(z80)); z80->cycles += 3; break;
 
 		//8 bit reg sub
 		case 0x90: subReg8(z80, &z80->af.hi, z80->bc.hi); break;
@@ -586,6 +587,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x9D: sbcReg8(z80, &z80->af.hi, z80->hl.lo); break;
 		case 0x9E: sbcMemHl(z80, &z80->af.hi); break;
 		case 0x9F: sbcReg8(z80, &z80->af.hi, z80->af.hi); break;
+		case 0xDE: sbcReg8(z80, &z80->af.hi, z80FetchU8(z80)); z80->cycles += 3; break;
 
 		//Jumps/Branches/Rets
 		case 0x10: djnz(z80); break;
@@ -1018,6 +1020,12 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 void executeIyInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		//Arithmetic
+		case 0x09: addReg16(z80, &z80->iy, &z80->bc); break;
+		case 0x19: addReg16(z80, &z80->iy, &z80->de); break;
+		case 0x29: addReg16(z80, &z80->iy, &z80->iy); break;
+		case 0x39: addReg16(z80, &z80->iy, &z80->sp); break;
+
 		case 0x21: loadReg16(z80, &z80->iy); z80->cycles += 4; break;
 		case 0x23: incReg16(z80, &z80->iy); z80->cycles += 4; break;
 
