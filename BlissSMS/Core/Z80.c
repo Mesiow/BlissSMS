@@ -1359,7 +1359,7 @@ void sbcReg16(struct Z80* z80, union Register* destReg, union Register *sourceRe
 	z80AffectFlag(z80, result == 0, FLAG_Z);
 	z80AffectFlag(z80, z80HalfBorrowOccured16(destReg->value, sourceReg->value - carry), FLAG_H);
 	z80AffectFlag(z80, z80OverflowFromSub16(destReg->value, sourceReg->value - carry), FLAG_PV);
-	z80AffectFlag(z80, z80BorrowOccured16(destReg->value + carry, sourceReg->value), FLAG_C);
+	z80AffectFlag(z80, z80BorrowOccured16(destReg->value, sourceReg->value + carry), FLAG_C);
 
 	destReg->value = result;
 	z80->cycles = 15;
