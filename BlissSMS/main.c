@@ -6,7 +6,6 @@
 
 
 int main(int argc, char *argv[]) {
-	
 	sfVideoMode mode = { 512, 384, 32 };
 	sfRenderWindow* window = sfRenderWindow_create(mode, "BlissSMS", sfResize | sfClose, NULL);
 	if (!window) {
@@ -28,7 +27,7 @@ int main(int argc, char *argv[]) {
 
 		systemRunEmulation(&sms);
 
-		sfRenderWindow_clear(window, sfBlue);
+		sfRenderWindow_clear(window, sfBlack);
 
 		systemRenderGraphics(&sms, window);
 
