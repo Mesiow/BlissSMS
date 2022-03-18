@@ -896,10 +896,16 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 
 
 		case 0x23: incReg16(z80, &z80->ix); z80->cycles += 4; break;
-		case 0x34: incMemIx(z80); break;
-		case 0x35: decMemIx(z80); break;
+		case 0x24: incReg8(z80, &z80->ix.hi); z80->cycles += 4; break;
+		case 0x2C: incReg8(z80, &z80->ix.lo); z80->cycles += 4; break;
+
+		case 0x25: decReg8(z80, &z80->ix.hi); z80->cycles += 4; break;
+		case 0x2D: decReg8(z80, &z80->ix.lo); z80->cycles += 4; break;
 
 		case 0x2B: decReg16(z80, &z80->ix); z80->cycles += 4; break;
+
+		case 0x34: incMemIx(z80); break;
+		case 0x35: decMemIx(z80); break;
 
 		//Load value from ix + offset into reg8
 		case 0x46: loadRegIx(z80, &z80->bc.hi); break;
@@ -1093,8 +1099,16 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 
 		case 0x21: loadReg16(z80, &z80->iy); z80->cycles += 4; break;
 		case 0x23: incReg16(z80, &z80->iy); z80->cycles += 4; break;
-
 		case 0x2B: decReg16(z80, &z80->iy); z80->cycles += 4; break;
+
+		case 0x24: incReg8(z80, &z80->iy.hi); z80->cycles += 4; break;
+		case 0x2C: incReg8(z80, &z80->iy.lo); z80->cycles += 4; break;
+
+		case 0x25: decReg8(z80, &z80->iy.hi); z80->cycles += 4; break;
+		case 0x2D: decReg8(z80, &z80->iy.lo); z80->cycles += 4; break;
+
+		case 0x34: incMemIy(z80); break;
+		case 0x35: decMemIy(z80); break;
 
 		case 0x84: addReg8(z80, &z80->af.hi, z80->iy.hi); break;
 		case 0x85: addReg8(z80, &z80->af.hi, z80->iy.lo); break;
@@ -2263,7 +2277,7 @@ void loadIxImm(struct Z80* z80)
 
 void incMemIx(struct Z80* z80)
 {
-	u8 offset = z80FetchU8(z80);
+	s8 offset = (s8)z80FetchU8(z80);
 	u16 address = z80->ix.value + offset;
 
 	u8 value = z80ReadU8(z80, address);
@@ -2298,7 +2312,7 @@ void adcMemIx(struct Z80* z80, u8* reg)
 
 void decMemIx(struct Z80* z80)
 {
-	u8 offset = z80FetchU8(z80);
+	s8 offset = (s8)z80FetchU8(z80);
 	u16 address = z80->ix.value + offset;
 
 	u8 value = z80ReadU8(z80, address);
@@ -2421,6 +2435,32 @@ void loadRegIy(struct Z80* z80, u8* reg)
 	*reg = value;
 
 	z80->cycles = 19;
+}
+
+void incMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	incReg8(z80, &value);
+
+	z80WriteU8(z80, value, address);
+
+	z80->cycles += 19;
+}
+
+void decMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	decReg8(z80, &value);
+
+	z80WriteU8(z80, value, address);
+
+	z80->cycles += 19;
 }
 
 void addMemIy(struct Z80* z80, u8* reg)
