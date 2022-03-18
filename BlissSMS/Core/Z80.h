@@ -259,7 +259,9 @@ void cpMemIx(struct Z80* z80);
 void jpMemIx(struct Z80* z80);
 
 //Bit ix instructions
-void bitIx(struct Z80* z80, u8 bit);
+void bitMemIx(struct Z80* z80, u8 bitToTest);
+void resMemIx(struct Z80* z80, u8 bit);
+void setMemIx(struct Z80* z80, u8 bit);
 
 
 //Iy instructions
@@ -276,6 +278,8 @@ void orMemIy(struct Z80* z80);
 void cpMemIy(struct Z80* z80);
 
 void jpMemIy(struct Z80* z80);
+
+void bitMemIy(struct Z80* z80, u8 bit);
 
 //Interrupt related instructions
 void di(struct Z80* z80);

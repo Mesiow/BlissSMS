@@ -2,7 +2,7 @@
 #include "Bus.h"
 #include "Io.h"
 #include "Vdp.h"
-
+//TODO: implement bit instructions relative addressing ix bit table (0x46)
 
 void cpmLoadRom(struct Z80* z80, const char *path)
 {
@@ -965,11 +965,33 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
-		case 0x56: bitIx(z80, 2); break;
-		case 0x5E: bitIx(z80, 3); break;
-		case 0x6E: bitIx(z80, 5); break;
-		case 0x76: bitIx(z80, 6); break;
-		case 0x7E: bitIx(z80, 7); break;
+		case 0x46: bitMemIx(z80, 0); break;
+		case 0x4E: bitMemIx(z80, 1); break;
+		case 0x56: bitMemIx(z80, 2); break;
+		case 0x5E: bitMemIx(z80, 3); break;
+		case 0x66: bitMemIx(z80, 4); break;
+		case 0x6E: bitMemIx(z80, 5); break;
+		case 0x76: bitMemIx(z80, 6); break;
+		case 0x7E: bitMemIx(z80, 7); break;
+
+		case 0x86: resMemIx(z80, 0); break;
+		case 0x8E: resMemIx(z80, 1); break;
+		case 0x96: resMemIx(z80, 2); break;
+		case 0x9E: resMemIx(z80, 3); break;
+		case 0xA6: resMemIx(z80, 4); break;
+		case 0xAE: resMemIx(z80, 5); break;
+		case 0xB6: resMemIx(z80, 6); break;
+		case 0xBE: resMemIx(z80, 7); break;
+
+		case 0xC6: setMemIx(z80, 0); break;
+		case 0xCE: setMemIx(z80, 1); break;
+		case 0xD6: setMemIx(z80, 2); break;	
+		case 0xDE: setMemIx(z80, 3); break;
+		case 0xE6: setMemIx(z80, 4); break;
+		case 0xEE: setMemIx(z80, 5); break;
+		case 0xF6: setMemIx(z80, 6); break;
+		case 0xFE: setMemIx(z80, 7); break;
+
 		default:
 			printf("\n--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
@@ -2271,16 +2293,36 @@ void jpMemIx(struct Z80* z80)
 	z80->cycles = 8;
 }
 
-void bitIx(struct Z80* z80, u8 bit)
+void bitMemIx(struct Z80* z80, u8 bitToTest)
 {
-	u8 offset = z80FetchU8(z80);
+	s8 offset = (s8)z80FetchU8(z80);
 	u8 value = z80ReadU8(z80, z80->ix.value + offset);
 
-	z80AffectFlag(z80, testBit(value, bit) == 0, FLAG_Z);
-	z80ClearFlag(z80, FLAG_N);
-	z80SetFlag(z80, FLAG_H);
+	bit(z80, value, bitToTest);
 
-	z80->cycles = 20;
+	z80->cycles += 12;
+}
+
+void resMemIx(struct Z80* z80, u8 bit)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->ix.value + offset);
+
+	res(z80, &value, bit);
+	z80WriteU8(z80, value, z80->ix.value + offset);
+
+	z80->cycles += 15;
+}
+
+void setMemIx(struct Z80* z80, u8 bit)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->ix.value + offset);
+
+	set(z80, &value, bit);
+	z80WriteU8(z80, value, z80->ix.value + offset);
+
+	z80->cycles += 15;
 }
 
 void loadRegIy(struct Z80* z80, u8* reg)
