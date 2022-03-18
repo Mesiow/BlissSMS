@@ -184,31 +184,31 @@ void z80HandleInterrupts(struct Z80* z80, struct Vdp *vdp)
 	}
 }
 
-u8 z80OverflowFromAdd8(u8 op1, u8 op2)
+u8 z80OverflowFromAdd8(u8 op1, u8 op2, u8 carry)
 {
-	u8 total = (op1 + op2) & 0xFF;
+	u8 total = (op1 + op2 + carry) & 0xFF;
 	//check if sign are same and if they are ~(op1 ^ op2) will evaluate to 1
 	//then check results sign and then and them together and determine overflow by the msb
 	return (~(op1 ^ op2) & ((op1 ^ total))) >> 7;
 }
 
-u8 z80OverflowFromSub8(u8 op1, u8 op2)
+u8 z80OverflowFromSub8(u8 op1, u8 op2, u8 carry)
 {		
-	u8 total = (op1 - op2) & 0xFF;
+	u8 total = (op1 - op2 - carry) & 0xFF;
 	//first check if both operands have a different sign,
 	//then check if the result has the same sign as the second operand
 	return (((s8)(op1 ^ op2) < 0) && ((s8)(op2 ^ total) >= 0));
 }
 
-u8 z80OverflowFromAdd16(u16 op1, u16 op2)
+u8 z80OverflowFromAdd16(u16 op1, u16 op2, u8 carry)
 {
-	u16 total = (op1 + op2) & 0xFFFF;
+	u16 total = (op1 + op2 + carry) & 0xFFFF;
 	return (~(op1 ^ op2) & ((op1 ^ total))) >> 15;
 }
 
-u8 z80OverflowFromSub16(u16 op1, u16 op2)
+u8 z80OverflowFromSub16(u16 op1, u16 op2, u8 carry)
 {
-	u16 total = (op1 - op2) & 0xFFFF;
+	u16 total = (op1 - op2 - carry) & 0xFFFF;
 	return (((s16)(op1 ^ op2) < 0) && ((s16)(op2 ^ total) >= 0));
 }
 
@@ -230,44 +230,44 @@ u8 z80IsSigned8(u8 value)
 	return (((signed_value >> 7) & 0x1) == 0x1);
 }
 
-u8 z80CarryOccured8(u8 op1, u8 op2)
+u8 z80CarryOccured8(u8 op1, u8 op2, u8 carry)
 {
-	return (((op1 & 0xFF) + (op2 & 0xFF)) > 0xFF);
+	return (((op1 & 0xFF) + (op2 & 0xFF) + (carry)) > 0xFF);
 }
 
-u8 z80HalfCarryOccured8(u8 op1, u8 op2)
+u8 z80HalfCarryOccured8(u8 op1, u8 op2, u8 carry)
 {
-	return (((op1 & 0xF) + (op2 & 0xF)) > 0xF);
+	return (((op1 & 0xF) + (op2 & 0xF) + (carry)) > 0xF);
 }
 
-u8 z80BorrowOccured8(u8 op1, u8 op2)
+u8 z80BorrowOccured8(u8 op1, u8 op2, u8 carry)
 {
-	return (op2 > op1);
+	return ((op2 + carry) > op1);
 }
 
-u8 z80HalfBorrowOccured8(u8 op1, u8 op2)
+u8 z80HalfBorrowOccured8(u8 op1, u8 op2, u8 carry)
 {
-	return (((op1 & 0xF) - (op2 & 0xF)) < 0);
+	return (((op1 & 0xF) - (op2 & 0xF) - (carry)) < 0);
 }
 
-u8 z80CarryOccured16(u16 op1, u16 op2)
+u8 z80CarryOccured16(u16 op1, u16 op2, u8 carry)
 {
-	return (((op1 & 0xFFFF) + (op2 & 0xFFFF)) > 0xFFFF);
+	return (((op1 & 0xFFFF) + (op2 & 0xFFFF) + (carry)) > 0xFFFF);
 }
 
-u8 z80HalfCarryOccured16(u16 op1, u16 op2)
+u8 z80HalfCarryOccured16(u16 op1, u16 op2, u8 carry)
 {
-	return ((op1 & 0xFFF) + (op2 & 0xFFF) > 0xFFF);
+	return (((op1 & 0xFFF) + (op2 & 0xFFF) + (carry)) > 0xFFF);
 }
 
-u8 z80BorrowOccured16(u16 op1, u16 op2)
+u8 z80BorrowOccured16(u16 op1, u16 op2, u8 carry)
 {
-	return (op2 > op1);
+	return ((op2 + carry) > op1);
 }
 
-u8 z80HalfBorrowOccured16(u16 op1, u16 op2)
+u8 z80HalfBorrowOccured16(u16 op1, u16 op2, u8 carry)
 {
-	return (((op1 & 0xFFF) - (op2 & 0xFFF)) < 0);
+	return (((op1 & 0xFFF) - (op2 & 0xFFF) - (carry)) < 0);
 }
 
 void z80WriteU8(struct Z80* z80, u8 value, u16 address)
@@ -1026,6 +1026,8 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 		case 0x29: addReg16(z80, &z80->iy, &z80->iy); break;
 		case 0x39: addReg16(z80, &z80->iy, &z80->sp); break;
 
+		case 0x86: addMemIy(z80, &z80->af.hi); break;
+
 		case 0x21: loadReg16(z80, &z80->iy); z80->cycles += 4; break;
 		case 0x23: incReg16(z80, &z80->iy); z80->cycles += 4; break;
 
@@ -1188,8 +1190,8 @@ void decReg8(struct Z80* z80, u8* reg)
 	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80HalfBorrowOccured8(*reg, 1), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromSub8(*reg, 1), FLAG_PV);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(*reg, 1, 0), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromSub8(*reg, 1, 0), FLAG_PV);
 
 	(*reg)--;
 	z80->cycles = 4;
@@ -1212,8 +1214,8 @@ void incReg8(struct Z80* z80, u8* reg)
 	z80ClearFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80HalfCarryOccured8(*reg, 1), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromAdd8(*reg, 1), FLAG_PV);
+	z80AffectFlag(z80, z80HalfCarryOccured8(*reg, 1, 0), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromAdd8(*reg, 1, 0), FLAG_PV);
 
 	(*reg)++;
 	z80->cycles = 4;
@@ -1232,8 +1234,8 @@ void incMemHl(struct Z80* z80)
 void addReg16(struct Z80* z80, union Register* destReg, union Register *sourceReg)
 {
 	z80ClearFlag(z80, FLAG_N);
-	z80AffectFlag(z80, z80HalfCarryOccured16(destReg->value, sourceReg->value), FLAG_H);
-	z80AffectFlag(z80, z80CarryOccured16(destReg->value, sourceReg->value), FLAG_C);
+	z80AffectFlag(z80, z80HalfCarryOccured16(destReg->value, sourceReg->value, 0), FLAG_H);
+	z80AffectFlag(z80, z80CarryOccured16(destReg->value, sourceReg->value, 0), FLAG_C);
 
 	destReg->value += sourceReg->value;
 
@@ -1250,12 +1252,11 @@ void addReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 	z80ClearFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80HalfCarryOccured8(dest_reg, sourceReg), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromAdd8(dest_reg, sourceReg), FLAG_PV);
-	z80AffectFlag(z80, z80CarryOccured8(dest_reg, sourceReg), FLAG_C);
+	z80AffectFlag(z80, z80HalfCarryOccured8(dest_reg, sourceReg, 0), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromAdd8(dest_reg, sourceReg, 0), FLAG_PV);
+	z80AffectFlag(z80, z80CarryOccured8(dest_reg, sourceReg, 0), FLAG_C);
 
-	(*destReg) += sourceReg;
-
+	*destReg = result;
 	z80->cycles = 4;
 }
 
@@ -1275,9 +1276,9 @@ void adcReg16(struct Z80* z80, union Register* destReg, union Register* sourceRe
 	z80ClearFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80IsSigned16(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80HalfCarryOccured16(destReg->value, sourceReg->value + carry), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromAdd16(destReg->value, sourceReg->value + carry), FLAG_PV);
-	z80AffectFlag(z80, z80CarryOccured16(destReg->value, sourceReg->value + carry), FLAG_C);
+	z80AffectFlag(z80, z80HalfCarryOccured16(destReg->value, sourceReg->value, carry), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromAdd16(destReg->value, sourceReg->value, carry), FLAG_PV);
+	z80AffectFlag(z80, z80CarryOccured16(destReg->value, sourceReg->value, carry), FLAG_C);
 
 	destReg->value = result;
 	z80->cycles = 15;
@@ -1300,9 +1301,9 @@ void adcReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 	z80ClearFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80HalfCarryOccured8(dest_reg, sourceReg + carry), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromAdd8(dest_reg, sourceReg + carry), FLAG_PV);
-	z80AffectFlag(z80, z80CarryOccured8(dest_reg, sourceReg + carry), FLAG_C);
+	z80AffectFlag(z80, z80HalfCarryOccured8(dest_reg, sourceReg, carry), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromAdd8(dest_reg, sourceReg, carry), FLAG_PV);
+	z80AffectFlag(z80, z80CarryOccured8(dest_reg, sourceReg, carry), FLAG_C);
 
 	*destReg = result;
 	z80->cycles = 4;
@@ -1316,9 +1317,9 @@ void subReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80HalfBorrowOccured8(dest_reg, sourceReg), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromSub8(dest_reg, sourceReg), FLAG_PV);
-	z80AffectFlag(z80, z80BorrowOccured8(dest_reg, sourceReg), FLAG_C);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(dest_reg, sourceReg, 0), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromSub8(dest_reg, sourceReg, 0), FLAG_PV);
+	z80AffectFlag(z80, z80BorrowOccured8(dest_reg, sourceReg, 0), FLAG_C);
 
 	*destReg = result;
 	z80->cycles = 4;
@@ -1341,9 +1342,9 @@ void sbcReg8(struct Z80* z80, u8* destReg, u8 sourceReg)
 	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80HalfBorrowOccured8(dest_reg, sourceReg - carry), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromSub8(dest_reg, sourceReg - carry), FLAG_PV);
-	z80AffectFlag(z80, z80BorrowOccured8(dest_reg, sourceReg + carry), FLAG_C);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(dest_reg, sourceReg, carry), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromSub8(dest_reg, sourceReg, carry), FLAG_PV);
+	z80AffectFlag(z80, z80BorrowOccured8(dest_reg, sourceReg, carry), FLAG_C);
 	
 	*destReg = result;
 	z80->cycles = 4;
@@ -1365,9 +1366,9 @@ void sbcReg16(struct Z80* z80, union Register* destReg, union Register *sourceRe
 	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80IsSigned16(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80HalfBorrowOccured16(destReg->value, sourceReg->value - carry), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromSub16(destReg->value, sourceReg->value - carry), FLAG_PV);
-	z80AffectFlag(z80, z80BorrowOccured16(destReg->value, sourceReg->value + carry), FLAG_C);
+	z80AffectFlag(z80, z80HalfBorrowOccured16(destReg->value, sourceReg->value, carry), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromSub16(destReg->value, sourceReg->value, carry), FLAG_PV);
+	z80AffectFlag(z80, z80BorrowOccured16(destReg->value, sourceReg->value, carry), FLAG_C);
 
 	destReg->value = result;
 	z80->cycles = 15;
@@ -1842,10 +1843,10 @@ void cp(struct Z80* z80, u8 reg)
 
 	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80OverflowFromSub8(z80->af.hi, reg), FLAG_PV);
+	z80AffectFlag(z80, z80OverflowFromSub8(z80->af.hi, reg, 0), FLAG_PV);
 	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
-	z80AffectFlag(z80, z80BorrowOccured8(z80->af.hi, reg), FLAG_C);
-	z80AffectFlag(z80, z80HalfBorrowOccured8(z80->af.hi, reg), FLAG_H);
+	z80AffectFlag(z80, z80BorrowOccured8(z80->af.hi, reg, 0), FLAG_C);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(z80->af.hi, reg, 0), FLAG_H);
 
 	z80->cycles = 4;
 }
@@ -1930,9 +1931,9 @@ void neg(struct Z80* z80)
 	z80SetFlag(z80, FLAG_N);
 	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
 	z80AffectFlag(z80, result == 0, FLAG_Z);
-	z80AffectFlag(z80, z80HalfBorrowOccured8(0, z80->af.hi), FLAG_H);
-	z80AffectFlag(z80, z80OverflowFromSub8(0, z80->af.hi), FLAG_PV);
-	z80AffectFlag(z80, z80BorrowOccured8(0, z80->af.hi), FLAG_C);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(0, z80->af.hi, 0), FLAG_H);
+	z80AffectFlag(z80, z80OverflowFromSub8(0, z80->af.hi, 0), FLAG_PV);
+	z80AffectFlag(z80, z80BorrowOccured8(0, z80->af.hi, 0), FLAG_C);
 
 	z80->af.hi = result;
 	z80->cycles = 8;
@@ -2163,6 +2164,17 @@ void loadRegIy(struct Z80* z80, u8* reg)
 	*reg = value;
 
 	z80->cycles = 19;
+}
+
+void addMemIy(struct Z80* z80, u8* reg)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	addReg8(z80, reg, value);
+
+	z80->cycles += 15;
 }
 
 void jpMemIy(struct Z80* z80)

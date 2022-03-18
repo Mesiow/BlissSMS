@@ -90,25 +90,25 @@ u8 getFlag(struct Z80* z80, u8 flag);
 
 void z80HandleInterrupts(struct Z80* z80, struct Vdp *vdp);
 
-u8 z80OverflowFromAdd8(u8 op1, u8 op2);
-u8 z80OverflowFromSub8(u8 op1, u8 op2);
-u8 z80OverflowFromAdd16(u16 op1, u16 op2);
-u8 z80OverflowFromSub16(u16 op1, u16 op2);
+u8 z80OverflowFromAdd8(u8 op1, u8 op2, u8 carry);
+u8 z80OverflowFromSub8(u8 op1, u8 op2, u8 carry);
+u8 z80OverflowFromAdd16(u16 op1, u16 op2, u8 carry);
+u8 z80OverflowFromSub16(u16 op1, u16 op2, u8 carry);
 u8 z80IsEvenParity(u8 value);
 u8 z80IsSigned8(u8 value);
 u8 z80IsSigned16(u16 value);
 
 //8 bit carry/borrow check
-u8 z80CarryOccured8(u8 op1, u8 op2); 
-u8 z80HalfCarryOccured8(u8 op1, u8 op2); 
-u8 z80BorrowOccured8(u8 op1, u8 op2);
-u8 z80HalfBorrowOccured8(u8 op1, u8 op2);
+u8 z80CarryOccured8(u8 op1, u8 op2, u8 carry); 
+u8 z80HalfCarryOccured8(u8 op1, u8 op2, u8 carry); 
+u8 z80BorrowOccured8(u8 op1, u8 op2, u8 carry);
+u8 z80HalfBorrowOccured8(u8 op1, u8 op2, u8 carry);
 
 //16 bit carry/borrow check
-u8 z80CarryOccured16(u16 op1, u16 op2);
-u8 z80HalfCarryOccured16(u16 op1, u16 op2);
-u8 z80BorrowOccured16(u16 op1, u16 op2);
-u8 z80HalfBorrowOccured16(u16 op1, u16 op2);
+u8 z80CarryOccured16(u16 op1, u16 op2, u8 carry);
+u8 z80HalfCarryOccured16(u16 op1, u16 op2, u8 carry);
+u8 z80BorrowOccured16(u16 op1, u16 op2, u8 carry);
+u8 z80HalfBorrowOccured16(u16 op1, u16 op2, u8 carry);
 
 void z80WriteU8(struct Z80 *z80, u8 value, u16 address);
 
@@ -258,6 +258,7 @@ void bitIx(struct Z80* z80, u8 bit);
 
 //Iy instructions
 void loadRegIy(struct Z80* z80, u8* reg);
+void addMemIy(struct Z80* z80, u8* reg);
 
 void jpMemIy(struct Z80* z80);
 
