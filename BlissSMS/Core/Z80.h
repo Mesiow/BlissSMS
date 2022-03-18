@@ -227,6 +227,8 @@ void neg(struct Z80* z80);
 void scf(struct Z80* z80);
 void cpd(struct Z80* z80);
 void cpdr(struct Z80* z80);
+void cpi(struct Z80* z80);
+void cpir(struct Z80* z80);
 
 //Bit instructions
 void rrc(struct Z80* z80, u8* reg);

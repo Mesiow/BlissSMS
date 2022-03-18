@@ -701,6 +701,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 			printf("\n--Unimplemented Main Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
+			z80->halted = 1;
 			break;
 	}
 }
@@ -878,6 +879,7 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 			printf("\n--Unimplemented Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
+			z80->halted = 1;
 			break;
 	}
 }
@@ -958,6 +960,7 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 			printf("\n--Unimplemented Ix Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
+			z80->halted = 1;
 			break;
 	}
 }
@@ -996,6 +999,7 @@ void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 			printf("\n--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
+			z80->halted = 1;
 			break;
 	}
 }
@@ -1031,6 +1035,8 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0x56: im(z80, One); break;
 		case 0x76: im(z80, One); break;
 
+		case 0xA1: cpi(z80); break;
+		case 0xB1: cpir(z80); break;
 		case 0xA9: cpd(z80); break;
 		case 0xB9: cpdr(z80); break;
 
@@ -1068,6 +1074,7 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 			printf("\n--Unimplemented Extended Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
+			z80->halted = 1;
 			break;
 	}
 }
@@ -1127,6 +1134,7 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 			printf("\n--Unimplemented Iy Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
+			z80->halted = 1;
 			break;
 	}
 }
@@ -1165,6 +1173,7 @@ void executeIyBitInstruction(struct Z80* z80, u8 opcode)
 			printf("\n--Unimplemented Iy Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
 			assert(0);
+			z80->halted = 1;
 			break;
 	}
 }
@@ -1989,38 +1998,30 @@ void daa(struct Z80* z80)
 			of the PSW and accumulator.
 
 		*/
-	s32 a = z80->af.hi;
 
-	if (!getFlag(z80, FLAG_N)) {
-		if ((getFlag(z80, FLAG_H)) || (a & 0x0F) > 9)
-			a += 6;
+	u8 correction = 0;
+	if ((z80->af.hi & 0xF) > 0x9 || getFlag(z80, FLAG_H)) {
+		correction += 0x6;
+	}
 
-		if ((getFlag(z80, FLAG_C)) || ((a >> 4) & 0xF) > 9)
-			a += 0x60;
+	if (z80->af.hi > 0x99 || getFlag(z80, FLAG_C)) {
+		correction += 0x60;
+		z80SetFlag(z80, FLAG_C);
+	}
 
-		z80->last_daa_operation = 0;
+	u8 sub = getFlag(z80, FLAG_N);
+	if (sub) {
+		u8 half_carry = getFlag(z80, FLAG_H);
+		z80AffectFlag(z80, half_carry && (z80->af.hi & 0xF) < 0x06, FLAG_H);
+		z80->af.hi -= correction;
 	}
 	else {
-		if (getFlag(z80, FLAG_H)) {
-			a -= 6;
-			if (!(getFlag(z80, FLAG_C)))
-				a &= 0xFF;
-		}
-		if (getFlag(z80, FLAG_C))
-			a -= 0x60;
-
-		z80->last_daa_operation = 1;
+		z80AffectFlag(z80, (z80->af.hi & 0xF) > 0x09, FLAG_H);
+		z80->af.hi += correction;
 	}
 
-	z80ClearFlag(z80, (FLAG_H | FLAG_Z));
-	if (a & 0x100)
-		z80SetFlag(z80, FLAG_C);
-
-	z80->af.hi = a & 0xFF;
-
-	if (!z80->af.hi)
-		z80SetFlag(z80, FLAG_Z);
-
+	z80AffectFlag(z80, z80IsSigned8(z80->af.hi), FLAG_S);
+	z80AffectFlag(z80, z80->af.hi == 0, FLAG_Z);
 	z80AffectFlag(z80, z80IsEvenParity(z80->af.hi), FLAG_PV);
 
 	z80->cycles = 4;
@@ -2080,6 +2081,32 @@ void cpd(struct Z80* z80)
 void cpdr(struct Z80* z80)
 {
 	cpd(z80);
+	if (z80->bc.value != 0 && getFlag(z80, FLAG_Z) == 0) {
+		z80->pc -= 2;
+		z80->cycles += 5;
+	}
+}
+
+void cpi(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	u8 result = z80->af.hi - value;
+
+	z80->hl.value++;
+	z80->bc.value--;
+
+	z80SetFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80IsSigned8(result), FLAG_S);
+	z80AffectFlag(z80, z80->af.hi == value, FLAG_Z);
+	z80AffectFlag(z80, z80HalfBorrowOccured8(z80->af.hi, value, 0), FLAG_H);
+	z80AffectFlag(z80, z80->bc.value != 0, FLAG_PV);
+
+	z80->cycles = 16;
+}
+
+void cpir(struct Z80* z80)
+{
+	cpi(z80);
 	if (z80->bc.value != 0 && getFlag(z80, FLAG_Z) == 0) {
 		z80->pc -= 2;
 		z80->cycles += 5;
