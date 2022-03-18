@@ -2,7 +2,7 @@
 #include "Bus.h"
 #include "Io.h"
 #include "Vdp.h"
-//TODO: implement bit instructions relative addressing ix bit table (0x46)
+//TODO: implement iy 0x34
 
 void cpmLoadRom(struct Z80* z80, const char *path)
 {
@@ -536,6 +536,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x25: decReg8(z80, &z80->hl.hi); break;
 		case 0x0D: decReg8(z80, &z80->bc.lo); break;
 		case 0x1D: decReg8(z80, &z80->de.lo); break;
+		case 0x2D: decReg8(z80, &z80->hl.lo); break;
 		case 0x3D: decReg8(z80, &z80->af.hi); break;
 		case 0x35: decMemHl(z80); break;
 
@@ -898,6 +899,8 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x34: incMemIx(z80); break;
 		case 0x35: decMemIx(z80); break;
 
+		case 0x2B: decReg16(z80, &z80->ix); z80->cycles += 4; break;
+
 		//Load value from ix + offset into reg8
 		case 0x46: loadRegIx(z80, &z80->bc.hi); break;
 		case 0x4E: loadRegIx(z80, &z80->bc.lo); break;
@@ -1090,6 +1093,8 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 
 		case 0x21: loadReg16(z80, &z80->iy); z80->cycles += 4; break;
 		case 0x23: incReg16(z80, &z80->iy); z80->cycles += 4; break;
+
+		case 0x2B: decReg16(z80, &z80->iy); z80->cycles += 4; break;
 
 		case 0x84: addReg8(z80, &z80->af.hi, z80->iy.hi); break;
 		case 0x85: addReg8(z80, &z80->af.hi, z80->iy.lo); break;
