@@ -1134,6 +1134,33 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 void executeIyBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		case 0x46: bitMemIy(z80, 0); break;
+		case 0x4E: bitMemIy(z80, 1); break;
+		case 0x56: bitMemIy(z80, 2); break;
+		case 0x5E: bitMemIy(z80, 3); break;
+		case 0x66: bitMemIy(z80, 4); break;
+		case 0x6E: bitMemIy(z80, 5); break;
+		case 0x76: bitMemIy(z80, 6); break;
+		case 0x7E: bitMemIy(z80, 7); break;
+						 
+		case 0x86: resMemIy(z80, 0); break;
+		case 0x8E: resMemIy(z80, 1); break;
+		case 0x96: resMemIy(z80, 2); break;
+		case 0x9E: resMemIy(z80, 3); break;
+		case 0xA6: resMemIy(z80, 4); break;
+		case 0xAE: resMemIy(z80, 5); break;
+		case 0xB6: resMemIy(z80, 6); break;
+		case 0xBE: resMemIy(z80, 7); break;
+						 
+		case 0xC6: setMemIy(z80, 0); break;
+		case 0xCE: setMemIy(z80, 1); break;
+		case 0xD6: setMemIy(z80, 2); break;
+		case 0xDE: setMemIy(z80, 3); break;
+		case 0xE6: setMemIy(z80, 4); break;
+		case 0xEE: setMemIy(z80, 5); break;
+		case 0xF6: setMemIy(z80, 6); break;
+		case 0xFE: setMemIy(z80, 7); break;
+
 		default:
 			printf("\n--Unimplemented Iy Bit Instruction--: 0x%02X\n", opcode);
 			printf("PC: 0x%04X\n", z80->pc);
@@ -2456,6 +2483,38 @@ void jpMemIy(struct Z80* z80)
 {
 	z80->pc = z80->iy.value;
 	z80->cycles = 8;
+}
+
+void bitMemIy(struct Z80* z80, u8 bitToTest)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	bit(z80, value, bitToTest);
+
+	z80->cycles += 12;
+}
+
+void resMemIy(struct Z80* z80, u8 bit)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	res(z80, &value, bit);
+	z80WriteU8(z80, value, z80->iy.value + offset);
+
+	z80->cycles += 15;
+}
+
+void setMemIy(struct Z80* z80, u8 bit)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	set(z80, &value, bit);
+	z80WriteU8(z80, value, z80->iy.value + offset);
+
+	z80->cycles += 12;
 }
 
 void di(struct Z80* z80)

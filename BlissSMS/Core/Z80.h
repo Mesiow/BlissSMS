@@ -281,7 +281,10 @@ void cpMemIy(struct Z80* z80);
 
 void jpMemIy(struct Z80* z80);
 
-void bitMemIy(struct Z80* z80, u8 bit);
+//Bit iy instructions
+void bitMemIy(struct Z80* z80, u8 bitToTest);
+void resMemIy(struct Z80* z80, u8 bit);
+void setMemIy(struct Z80* z80, u8 bit);
 
 //Interrupt related instructions
 void di(struct Z80* z80);
