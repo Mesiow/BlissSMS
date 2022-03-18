@@ -269,7 +269,9 @@ void setMemIx(struct Z80* z80, u8 bit);
 
 
 //Iy instructions
+void loadIyImm(struct Z80* z80);
 void loadRegIy(struct Z80* z80, u8* reg);
+void loadIyReg(struct Z80* z80, u8 reg);
 
 void incMemIy(struct Z80* z80);
 void decMemIy(struct Z80* z80);

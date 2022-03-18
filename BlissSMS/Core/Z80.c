@@ -2,7 +2,6 @@
 #include "Bus.h"
 #include "Io.h"
 #include "Vdp.h"
-//TODO: implement iy 0x34
 
 void cpmLoadRom(struct Z80* z80, const char *path)
 {
@@ -888,24 +887,9 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 void executeIxInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
-		//Arithmetic
-		case 0x09: addReg16(z80, &z80->ix, &z80->bc); break;
-		case 0x19: addReg16(z80, &z80->ix, &z80->de); break;
-		case 0x29: addReg16(z80, &z80->ix, &z80->ix); break;
-		case 0x39: addReg16(z80, &z80->ix, &z80->sp); break;
-
-
-		case 0x23: incReg16(z80, &z80->ix); z80->cycles += 4; break;
-		case 0x24: incReg8(z80, &z80->ix.hi); z80->cycles += 4; break;
-		case 0x2C: incReg8(z80, &z80->ix.lo); z80->cycles += 4; break;
-
-		case 0x25: decReg8(z80, &z80->ix.hi); z80->cycles += 4; break;
-		case 0x2D: decReg8(z80, &z80->ix.lo); z80->cycles += 4; break;
-
-		case 0x2B: decReg16(z80, &z80->ix); z80->cycles += 4; break;
-
-		case 0x34: incMemIx(z80); break;
-		case 0x35: decMemIx(z80); break;
+		//Loads
+		case 0x22: loadMemReg16(z80, &z80->ix); z80->cycles += 4; break;
+		case 0x2A: load16Reg(z80, &z80->ix); z80->cycles += 4; break;
 
 		//Load value from ix + offset into reg8
 		case 0x46: loadRegIx(z80, &z80->bc.hi); break;
@@ -925,6 +909,26 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x74: loadIxReg(z80, z80->hl.hi); break;
 		case 0x75: loadIxReg(z80, z80->hl.lo); break;
 		case 0x77: loadIxReg(z80, z80->af.hi); break;
+
+		//Arithmetic
+		case 0x09: addReg16(z80, &z80->ix, &z80->bc); break;
+		case 0x19: addReg16(z80, &z80->ix, &z80->de); break;
+		case 0x29: addReg16(z80, &z80->ix, &z80->ix); break;
+		case 0x39: addReg16(z80, &z80->ix, &z80->sp); break;
+
+
+		case 0x23: incReg16(z80, &z80->ix); z80->cycles += 4; break;
+		case 0x24: incReg8(z80, &z80->ix.hi); z80->cycles += 4; break;
+		case 0x2C: incReg8(z80, &z80->ix.lo); z80->cycles += 4; break;
+
+		case 0x25: decReg8(z80, &z80->ix.hi); z80->cycles += 4; break;
+		case 0x2D: decReg8(z80, &z80->ix.lo); z80->cycles += 4; break;
+
+		case 0x2B: decReg16(z80, &z80->ix); z80->cycles += 4; break;
+
+		case 0x34: incMemIx(z80); break;
+		case 0x35: decMemIx(z80); break;
+
 
 		case 0x84: addReg8(z80, &z80->af.hi, z80->ix.hi); break;
 		case 0x85: addReg8(z80, &z80->af.hi, z80->ix.lo); break;
@@ -1022,6 +1026,8 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0x73: loadMemReg16(z80, &z80->sp); break;
 		case 0x5F: loadAWithR(z80); break;
 		case 0x7B: load16Reg(z80, &z80->sp); z80->cycles += 4; break;
+		case 0x4B: load16Reg(z80, &z80->bc); z80->cycles += 4; break;
+		case 0x5B: load16Reg(z80, &z80->de); z80->cycles += 4; break;
 
 		case 0x40: in(z80, z80->bc.lo, &z80->bc.hi, opcode); break;
 		case 0x48: in(z80, z80->bc.lo, &z80->bc.lo, opcode); break;
@@ -1091,6 +1097,29 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 void executeIyInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		//Loads
+		case 0x2A: load16Reg(z80, &z80->iy); z80->cycles += 4; break;
+		case 0x22: loadMemReg16(z80, &z80->iy); z80->cycles += 4; break;
+
+		//Load value from ix + offset into reg8
+		case 0x46: loadRegIy(z80, &z80->bc.hi); break;
+		case 0x4E: loadRegIy(z80, &z80->bc.lo); break;
+		case 0x56: loadRegIy(z80, &z80->de.hi); break;
+		case 0x5E: loadRegIy(z80, &z80->de.lo); break;
+		case 0x66: loadRegIy(z80, &z80->hl.hi); break;
+		case 0x6E: loadRegIy(z80, &z80->hl.lo); break;
+		case 0x7E: loadRegIy(z80, &z80->af.hi); break;
+
+		//Load reg8 into memory location ix + immediate s8
+		case 0x36: loadIyImm(z80); break;
+		case 0x70: loadIyReg(z80, z80->bc.hi); break;
+		case 0x71: loadIyReg(z80, z80->bc.lo); break;
+		case 0x72: loadIyReg(z80, z80->de.hi); break;
+		case 0x73: loadIyReg(z80, z80->de.lo); break;
+		case 0x74: loadIyReg(z80, z80->hl.hi); break;
+		case 0x75: loadIyReg(z80, z80->hl.lo); break;
+		case 0x77: loadIyReg(z80, z80->af.hi); break;
+
 		//Arithmetic
 		case 0x09: addReg16(z80, &z80->iy, &z80->bc); break;
 		case 0x19: addReg16(z80, &z80->iy, &z80->de); break;
@@ -1142,8 +1171,6 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 		case 0xBC: cp(z80, z80->iy.hi); break;
 		case 0xBD: cp(z80, z80->iy.lo); break;
 		case 0xBE: cpMemIy(z80); break;
-
-		case 0x7E: loadRegIy(z80, &z80->af.hi); break;
 
 		case 0xE9: jpMemIy(z80); break;
 
@@ -2427,12 +2454,34 @@ void setMemIx(struct Z80* z80, u8 bit)
 	z80->cycles += 15;
 }
 
+void loadIyImm(struct Z80* z80)
+{
+	//ix offset byte is first in memory
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 imm_value = z80FetchU8(z80);
+	z80WriteU8(z80, imm_value, address);
+
+	z80->cycles = 19;
+}
+
 void loadRegIy(struct Z80* z80, u8* reg)
 {
 	s8 offset = (s8)z80FetchU8(z80);
 	u8 value = z80ReadU8(z80, z80->iy.value + offset);
 
 	*reg = value;
+
+	z80->cycles = 19;
+}
+
+void loadIyReg(struct Z80* z80, u8 reg)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	z80WriteU8(z80, reg, address);
 
 	z80->cycles = 19;
 }
