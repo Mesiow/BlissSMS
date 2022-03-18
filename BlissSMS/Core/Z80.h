@@ -245,9 +245,15 @@ void loadIxImm(struct Z80* z80);
 
 void incMemIx(struct Z80* z80);
 void addMemIx(struct Z80* z80, u8* reg);
+void adcMemIx(struct Z80* z80, u8* reg);
 void decMemIx(struct Z80* z80);
+void subMemIx(struct Z80* z80, u8* reg);
+void sbcMemIx(struct Z80* z80, u8* reg);
 
+void andMemIx(struct Z80* z80);
+void xorMemIx(struct Z80* z80);
 void orMemIx(struct Z80* z80);
+void cpMemIx(struct Z80* z80);
 
 //Ix branches
 void jpMemIx(struct Z80* z80);
@@ -258,7 +264,16 @@ void bitIx(struct Z80* z80, u8 bit);
 
 //Iy instructions
 void loadRegIy(struct Z80* z80, u8* reg);
+
 void addMemIy(struct Z80* z80, u8* reg);
+void adcMemIy(struct Z80* z80, u8* reg);
+void subMemIy(struct Z80* z80, u8* reg);
+void sbcMemIy(struct Z80* z80, u8* reg);
+
+void andMemIy(struct Z80* z80);
+void xorMemIy(struct Z80* z80);
+void orMemIy(struct Z80* z80);
+void cpMemIy(struct Z80* z80);
 
 void jpMemIy(struct Z80* z80);
 

@@ -577,6 +577,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 		case 0x94: subReg8(z80, &z80->af.hi, z80->hl.hi); break;
 		case 0x95: subReg8(z80, &z80->af.hi, z80->hl.lo); break;
 		case 0x96: subMemHl(z80, &z80->af.hi); break;
+		case 0x97: subReg8(z80, &z80->af.hi, z80->af.hi); break;
 		case 0xD6: subReg8(z80, &z80->af.hi, z80FetchU8(z80)); z80->cycles += 3; break;
 
 		case 0x98: sbcReg8(z80, &z80->af.hi, z80->bc.hi); break;
@@ -890,6 +891,7 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x29: addReg16(z80, &z80->ix, &z80->ix); break;
 		case 0x39: addReg16(z80, &z80->ix, &z80->sp); break;
 
+
 		case 0x23: incReg16(z80, &z80->ix); z80->cycles += 4; break;
 		case 0x34: incMemIx(z80); break;
 		case 0x35: decMemIx(z80); break;
@@ -913,12 +915,40 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x75: loadIxReg(z80, z80->hl.lo); break;
 		case 0x77: loadIxReg(z80, z80->af.hi); break;
 
+		case 0x84: addReg8(z80, &z80->af.hi, z80->ix.hi); break;
+		case 0x85: addReg8(z80, &z80->af.hi, z80->ix.lo); break;
 		case 0x86: addMemIx(z80, &z80->af.hi); break;
 
-		case 0x21: loadReg16(z80, &z80->ix); z80->cycles += 4; break;
+		case 0x8C: adcReg8(z80, &z80->af.hi, z80->ix.hi); break;
+		case 0x8D: adcReg8(z80, &z80->af.hi, z80->ix.lo); break;
+		case 0x8E: adcMemIx(z80, &z80->af.hi); break;
+
+		case 0x94: subReg8(z80, &z80->af.hi, z80->ix.hi); break;
+		case 0x95: subReg8(z80, &z80->af.hi, z80->ix.lo); break;
+		case 0x96: subMemIx(z80, &z80->af.hi); break;
+
+		case 0x9C: sbcReg8(z80, &z80->af.hi, z80->ix.hi); break;
+		case 0x9D: sbcReg8(z80, &z80->af.hi, z80->ix.lo); break;
+		case 0x9E: sbcMemIx(z80, &z80->af.hi); break;
 
 		//Logical
+		case 0xA4: and(z80, z80->ix.hi); break;
+		case 0xA5: and(z80, z80->ix.lo); break;
+		case 0xA6: andMemIx(z80); break;
+		
+		case 0xAC: xor(z80, z80->ix.hi); break;
+		case 0xAD: xor(z80, z80->ix.lo); break;
+		case 0xAE: xorMemIx(z80); break;
+
+		case 0xB4: or(z80, z80->ix.hi); break;
+		case 0xB5: or(z80, z80->ix.lo); break;
 		case 0xB6: orMemIx(z80); break;
+
+		case 0xBC: cp(z80, z80->ix.hi); break;
+		case 0xBD: cp(z80, z80->ix.lo); break;
+		case 0xBE: cpMemIx(z80); break;
+
+		case 0x21: loadReg16(z80, &z80->ix); z80->cycles += 4; break;
 
 		case 0xE9: jpMemIx(z80); break;
 
@@ -1026,10 +1056,41 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 		case 0x29: addReg16(z80, &z80->iy, &z80->iy); break;
 		case 0x39: addReg16(z80, &z80->iy, &z80->sp); break;
 
-		case 0x86: addMemIy(z80, &z80->af.hi); break;
-
 		case 0x21: loadReg16(z80, &z80->iy); z80->cycles += 4; break;
 		case 0x23: incReg16(z80, &z80->iy); z80->cycles += 4; break;
+
+		case 0x84: addReg8(z80, &z80->af.hi, z80->iy.hi); break;
+		case 0x85: addReg8(z80, &z80->af.hi, z80->iy.lo); break;
+		case 0x86: addMemIy(z80, &z80->af.hi); break;
+
+		case 0x8C: adcReg8(z80, &z80->af.hi, z80->iy.hi); break;
+		case 0x8D: adcReg8(z80, &z80->af.hi, z80->iy.lo); break;
+		case 0x8E: adcMemIy(z80, &z80->af.hi); break;
+
+		case 0x94: subReg8(z80, &z80->af.hi, z80->iy.hi); break;
+		case 0x95: subReg8(z80, &z80->af.hi, z80->iy.lo); break;
+		case 0x96: subMemIy(z80, &z80->af.hi); break;
+
+		case 0x9C: sbcReg8(z80, &z80->af.hi, z80->iy.hi); break;
+		case 0x9D: sbcReg8(z80, &z80->af.hi, z80->iy.lo); break;
+		case 0x9E: sbcMemIy(z80, &z80->af.hi); break;
+
+		//Logical
+		case 0xA4: and(z80, z80->iy.hi); break;
+		case 0xA5: and(z80, z80->iy.lo); break;
+		case 0xA6: andMemIy(z80); break;
+
+		case 0xAC: xor(z80, z80->iy.hi); break;
+		case 0xAD: xor(z80, z80->iy.lo); break;
+		case 0xAE: xorMemIy(z80); break;
+
+		case 0xB4: or(z80, z80->iy.hi); break;
+		case 0xB5: or(z80, z80->iy.lo); break;
+		case 0xB6: orMemIy(z80); break;
+
+		case 0xBC: cp(z80, z80->iy.hi); break;
+		case 0xBD: cp(z80, z80->iy.lo); break;
+		case 0xBE: cpMemIy(z80); break;
 
 		case 0x7E: loadRegIy(z80, &z80->af.hi); break;
 
@@ -2114,6 +2175,17 @@ void addMemIx(struct Z80* z80, u8* reg)
 	z80->cycles += 15;
 }
 
+void adcMemIx(struct Z80* z80, u8* reg)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->ix.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	adcReg8(z80, reg, value);
+
+	z80->cycles += 15;
+}
+
 void decMemIx(struct Z80* z80)
 {
 	u8 offset = z80FetchU8(z80);
@@ -2127,6 +2199,50 @@ void decMemIx(struct Z80* z80)
 	z80->cycles += 19;
 }
 
+void subMemIx(struct Z80* z80, u8* reg)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->ix.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	subReg8(z80, reg, value);
+
+	z80->cycles += 15;
+}
+
+void sbcMemIx(struct Z80* z80, u8* reg)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->ix.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	sbcReg8(z80, reg, value);
+
+	z80->cycles += 15;
+}
+
+void andMemIx(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->ix.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	and(z80, value);
+
+	z80->cycles += 15;
+}
+
+void xorMemIx(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->ix.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	xor(z80, value);
+
+	z80->cycles += 15;
+}
+
 void orMemIx(struct Z80* z80)
 {
 	s8 offset = (s8)z80FetchU8(z80);
@@ -2134,6 +2250,17 @@ void orMemIx(struct Z80* z80)
 
 	u8 value = z80ReadU8(z80, address);
 	or(z80, value);
+
+	z80->cycles += 15;
+}
+
+void cpMemIx(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->ix.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	cp(z80, value);
 
 	z80->cycles += 15;
 }
@@ -2173,6 +2300,83 @@ void addMemIy(struct Z80* z80, u8* reg)
 
 	u8 value = z80ReadU8(z80, address);
 	addReg8(z80, reg, value);
+
+	z80->cycles += 15;
+}
+
+void adcMemIy(struct Z80* z80, u8* reg)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	adcReg8(z80, reg, value);
+
+	z80->cycles += 15;
+}
+
+void subMemIy(struct Z80* z80, u8* reg)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	subReg8(z80, reg, value);
+
+	z80->cycles += 15;
+}
+
+void sbcMemIy(struct Z80* z80, u8* reg)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	sbcReg8(z80, reg, value);
+
+	z80->cycles += 15;
+}
+
+void andMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	and(z80, value);
+
+	z80->cycles += 15;
+}
+
+void xorMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	xor(z80, value);
+
+	z80->cycles += 15;
+}
+
+void orMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	or(z80, value);
+
+	z80->cycles += 15;
+}
+
+void cpMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u16 address = z80->iy.value + offset;
+
+	u8 value = z80ReadU8(z80, address);
+	cp(z80, value);
 
 	z80->cycles += 15;
 }
