@@ -335,7 +335,6 @@ u16 z80Clock(struct Z80* z80)
 		if (z80->cpm_stub_enabled) {
 			cpmHandleSysCalls(z80);
 			if (z80->pc == 0) {
-				printf("Hit pc == 0\n");
 				z80->halted = 1;
 				return;
 			}
