@@ -240,6 +240,8 @@ void rl(struct Z80* z80, u8* reg);
 void rrc(struct Z80* z80, u8* reg);
 void rr(struct Z80* z80, u8* reg);
 void rrcMemHl(struct Z80* z80);
+void sla(struct Z80* z80, u8* reg);
+void sra(struct Z80* z80, u8* reg);
 void srl(struct Z80* z80, u8* reg);
 void srlMemHl(struct Z80* z80);
 
@@ -277,6 +279,8 @@ void rlcMemIx(struct Z80* z80);
 void rrcMemIx(struct Z80* z80);
 void rlMemIx(struct Z80* z80);
 void rrMemIx(struct Z80* z80);
+void slaMemIx(struct Z80* z80);
+void sraMemIx(struct Z80* z80);
 
 
 //Iy instructions

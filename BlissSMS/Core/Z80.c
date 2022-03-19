@@ -1031,6 +1031,9 @@ void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 		case 0x0E: rrcMemIx(z80); break;
 		case 0x16: rlMemIx(z80); break;
 		case 0x1E: rrMemIx(z80); break;
+		case 0x26: slaMemIx(z80); break;
+		case 0x2E: sraMemIx(z80); break;
+		case 0x3E: srlMemIx(z80); break;
 
 		case 0x46: bitMemIx(z80, 0); break;
 		case 0x4E: bitMemIx(z80, 1); break;
@@ -2422,6 +2425,53 @@ void rrcMemHl(struct Z80* z80)
 	z80->cycles = 15;
 }
 
+void sla(struct Z80* z80, u8* reg)
+{
+	u8 reg_value = (*reg);
+	u8 msb = (reg_value >> 7) & 0x1;
+
+	reg_value <<= 1;
+	reg_value = clearBit(reg_value, 0);
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	if (msb) {
+		z80SetFlag(z80, FLAG_C);
+	}
+	else {
+		z80ClearFlag(z80, FLAG_C);
+	}
+	(*reg) = reg_value;
+
+	z80AffectFlag(z80, z80IsSigned8(reg_value), FLAG_S);
+	z80AffectFlag(z80, reg_value == 0, FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(reg_value), FLAG_PV);
+
+	z80->cycles = 8;
+}
+
+void sra(struct Z80* z80, u8* reg)
+{
+	u8 reg_value = (*reg);
+	u8 lsb = reg_value & 0x1;
+
+	reg_value >>= 1;
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	if (lsb) {
+		z80SetFlag(z80, FLAG_C);
+	}
+	else {
+		z80ClearFlag(z80, FLAG_C);
+	}
+	(*reg) = reg_value;
+
+	z80AffectFlag(z80, z80IsSigned8(reg_value), FLAG_S);
+	z80AffectFlag(z80, reg_value == 0, FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(reg_value), FLAG_PV);
+
+	z80->cycles = 8;
+}
+
 void srl(struct Z80* z80, u8* reg)
 {
 	u8 reg_value = (*reg);
@@ -2721,6 +2771,28 @@ void rrMemIx(struct Z80* z80)
 	u8 value = z80ReadU8(z80, z80->ix.value + offset);
 
 	rr(z80, &value);
+	z80WriteU8(z80, value, z80->ix.value + offset);
+
+	z80->cycles = 23;
+}
+
+void slaMemIx(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->ix.value + offset);
+
+	sla(z80, &value);
+	z80WriteU8(z80, value, z80->ix.value + offset);
+
+	z80->cycles = 23;
+}
+
+void sraMemIx(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->ix.value + offset);
+
+	sra(z80, &value);
 	z80WriteU8(z80, value, z80->ix.value + offset);
 
 	z80->cycles = 23;
