@@ -935,7 +935,77 @@ void executeBitInstruction(struct Z80* z80, u8 opcode)
 	case 0xBE: resMemHl(z80, 7); break;
 	case 0xBF: res(z80, &z80->af.hi, 7); break;
 
+	case 0xC0: set(z80, &z80->bc.hi, 0); break;
+	case 0xC1: set(z80, &z80->bc.lo, 0); break;
+	case 0xC2: set(z80, &z80->de.hi, 0); break;
+	case 0xC3: set(z80, &z80->de.lo, 0); break;
+	case 0xC4: set(z80, &z80->hl.hi, 0); break;
+	case 0xC5: set(z80, &z80->hl.lo, 0); break;
+	case 0xC6: setMemHl(z80, 0); break;
 	case 0xC7: set(z80, &z80->af.hi, 0); break;
+
+	case 0xC8: set(z80, &z80->bc.hi, 1); break;
+	case 0xC9: set(z80, &z80->bc.lo, 1); break;
+	case 0xCA: set(z80, &z80->de.hi, 1); break;
+	case 0xCB: set(z80, &z80->de.lo, 1); break;
+	case 0xCC: set(z80, &z80->hl.hi, 1); break;
+	case 0xCD: set(z80, &z80->hl.lo, 1); break;
+	case 0xCE: setMemHl(z80, 1); break;
+	case 0xCF: set(z80, &z80->af.hi, 1); break;
+
+	case 0xD0: set(z80, &z80->bc.hi, 2); break;
+	case 0xD1: set(z80, &z80->bc.lo, 2); break;
+	case 0xD2: set(z80, &z80->de.hi, 2); break;
+	case 0xD3: set(z80, &z80->de.lo, 2); break;
+	case 0xD4: set(z80, &z80->hl.hi, 2); break;
+	case 0xD5: set(z80, &z80->hl.lo, 2); break;
+	case 0xD6: setMemHl(z80, 2); break;
+	case 0xD7: set(z80, &z80->af.hi, 2); break;
+
+	case 0xD8: set(z80, &z80->bc.hi, 3); break;
+	case 0xD9: set(z80, &z80->bc.lo, 3); break;
+	case 0xDA: set(z80, &z80->de.hi, 3); break;
+	case 0xDB: set(z80, &z80->de.lo, 3); break;
+	case 0xDC: set(z80, &z80->hl.hi, 3); break;
+	case 0xDD: set(z80, &z80->hl.lo, 3); break;
+	case 0xDE: setMemHl(z80, 3); break;
+	case 0xDF: set(z80, &z80->af.hi, 3); break;
+
+	case 0xE0: set(z80, &z80->bc.hi, 4); break;
+	case 0xE1: set(z80, &z80->bc.lo, 4); break;
+	case 0xE2: set(z80, &z80->de.hi, 4); break;
+	case 0xE3: set(z80, &z80->de.lo, 4); break;
+	case 0xE4: set(z80, &z80->hl.hi, 4); break;
+	case 0xE5: set(z80, &z80->hl.lo, 4); break;
+	case 0xE6: setMemHl(z80, 4); break;
+	case 0xE7: set(z80, &z80->af.hi, 4); break;
+
+	case 0xE8: set(z80, &z80->bc.hi, 5); break;
+	case 0xE9: set(z80, &z80->bc.lo, 5); break;
+	case 0xEA: set(z80, &z80->de.hi, 5); break;
+	case 0xEB: set(z80, &z80->de.lo, 5); break;
+	case 0xEC: set(z80, &z80->hl.hi, 5); break;
+	case 0xED: set(z80, &z80->hl.lo, 5); break;
+	case 0xEE: setMemHl(z80, 5); break;
+	case 0xEF: set(z80, &z80->af.hi, 5); break;
+
+	case 0xF0: set(z80, &z80->bc.hi, 6); break;
+	case 0xF1: set(z80, &z80->bc.lo, 6); break;
+	case 0xF2: set(z80, &z80->de.hi, 6); break;
+	case 0xF3: set(z80, &z80->de.lo, 6); break;
+	case 0xF4: set(z80, &z80->hl.hi, 6); break;
+	case 0xF5: set(z80, &z80->hl.lo, 6); break;
+	case 0xF6: setMemHl(z80, 6); break;
+	case 0xF7: set(z80, &z80->af.hi, 6); break;
+
+	case 0xF8: set(z80, &z80->bc.hi, 7); break;
+	case 0xF9: set(z80, &z80->bc.lo, 7); break;
+	case 0xFA: set(z80, &z80->de.hi, 7); break;
+	case 0xFB: set(z80, &z80->de.lo, 7); break;
+	case 0xFC: set(z80, &z80->hl.hi, 7); break;
+	case 0xFD: set(z80, &z80->hl.lo, 7); break;
+	case 0xFE: setMemHl(z80, 7); break;
+	case 0xFF: set(z80, &z80->af.hi, 7); break;
 
 	default:
 		printf("\n--Unimplemented Bit Instruction--: 0x%02X\n", opcode);
@@ -2696,6 +2766,16 @@ void set(struct Z80* z80, u8* reg, u8 bit)
 {
 	*reg = setBit(*reg, bit);
 	z80->cycles = 8;
+}
+
+void setMemHl(struct Z80* z80, u8 bit)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	set(z80, &value, bit);
+
+	z80WriteU8(z80, value, z80->hl.value);
+
+	z80->cycles = 15;
 }
 
 void loadRegIx(struct Z80* z80, u8* reg)
