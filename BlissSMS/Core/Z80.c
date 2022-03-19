@@ -891,6 +891,9 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x22: loadMemReg16(z80, &z80->ix); z80->cycles += 4; break;
 		case 0x2A: load16Reg(z80, &z80->ix); z80->cycles += 4; break;
 
+		case 0x26: loadReg8(z80, &z80->ix.hi); z80->cycles += 4; break;
+		case 0x2E: loadReg8(z80, &z80->ix.lo); z80->cycles += 4; break;
+
 		//Load value from ix + offset into reg8
 		case 0x46: loadRegIx(z80, &z80->bc.hi); break;
 		case 0x4E: loadRegIx(z80, &z80->bc.lo); break;
@@ -1100,6 +1103,9 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 		//Loads
 		case 0x2A: load16Reg(z80, &z80->iy); z80->cycles += 4; break;
 		case 0x22: loadMemReg16(z80, &z80->iy); z80->cycles += 4; break;
+
+		case 0x26: loadReg8(z80, &z80->iy.hi); z80->cycles += 4; break;
+		case 0x2E: loadReg8(z80, &z80->iy.lo); z80->cycles += 4; break;
 
 		//Load value from ix + offset into reg8
 		case 0x46: loadRegIy(z80, &z80->bc.hi); break;
