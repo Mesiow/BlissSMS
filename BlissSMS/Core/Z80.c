@@ -1286,6 +1286,14 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 void executeIyBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
+		case 0x06: rlcMemIy(z80); break;
+		case 0x0E: rrcMemIy(z80); break;
+		case 0x16: rlMemIy(z80); break;
+		case 0x1E: rrMemIy(z80); break;
+		case 0x26: slaMemIy(z80); break;
+		case 0x2E: sraMemIy(z80); break;
+		case 0x3E: srlMemIy(z80); break;
+
 		case 0x46: bitMemIy(z80, 0); break;
 		case 0x4E: bitMemIy(z80, 1); break;
 		case 0x56: bitMemIy(z80, 2); break;
@@ -2991,6 +2999,83 @@ void setMemIy(struct Z80* z80, u8 bit)
 	z80WriteU8(z80, value, z80->iy.value + offset);
 
 	z80->cycles += 12;
+}
+
+void rlcMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	rlc(z80, &value);
+	z80WriteU8(z80, value, z80->iy.value + offset);
+
+	z80->cycles = 23;
+}
+
+void rrcMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	rrc(z80, &value);
+	z80WriteU8(z80, value, z80->iy.value + offset);
+
+	z80->cycles = 23;
+}
+
+void rlMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	rl(z80, &value);
+	z80WriteU8(z80, value, z80->iy.value + offset);
+
+	z80->cycles = 23;
+}
+
+void rrMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	rr(z80, &value);
+	z80WriteU8(z80, value, z80->iy.value + offset);
+
+	z80->cycles = 23;
+}
+
+void slaMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	sla(z80, &value);
+	z80WriteU8(z80, value, z80->iy.value + offset);
+
+	z80->cycles = 23;
+}
+
+void sraMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	sra(z80, &value);
+	z80WriteU8(z80, value, z80->iy.value + offset);
+
+	z80->cycles = 23;
+}
+
+void srlMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	srl(z80, &value);
+	z80WriteU8(z80, value, z80->iy.value + offset);
+
+	z80->cycles = 23;
 }
 
 void di(struct Z80* z80)

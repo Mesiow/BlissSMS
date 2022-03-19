@@ -307,6 +307,14 @@ void jpMemIy(struct Z80* z80);
 void bitMemIy(struct Z80* z80, u8 bitToTest);
 void resMemIy(struct Z80* z80, u8 bit);
 void setMemIy(struct Z80* z80, u8 bit);
+void rlcMemIy(struct Z80* z80);
+void rrcMemIy(struct Z80* z80);
+void rlMemIy(struct Z80* z80);
+void rrMemIy(struct Z80* z80);
+void slaMemIy(struct Z80* z80);
+void sraMemIy(struct Z80* z80);
+void srlMemIy(struct Z80* z80);
+
 
 //Interrupt related instructions
 void di(struct Z80* z80);
