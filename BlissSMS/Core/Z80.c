@@ -2410,6 +2410,7 @@ void rr(struct Z80* z80, u8* reg)
 	reg_value >>= 1;
 	reg_value |= (carry << 7);
 
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
 	if (lsb) {
 		z80SetFlag(z80, FLAG_C);
 	}
@@ -2441,7 +2442,6 @@ void sla(struct Z80* z80, u8* reg)
 	u8 msb = (reg_value >> 7) & 0x1;
 
 	reg_value <<= 1;
-	reg_value = clearBit(reg_value, 0);
 
 	z80ClearFlag(z80, (FLAG_N | FLAG_H));
 	if (msb) {
@@ -2463,8 +2463,10 @@ void sra(struct Z80* z80, u8* reg)
 {
 	u8 reg_value = (*reg);
 	u8 lsb = reg_value & 0x1;
+	u8 sign = reg_value & 0x80;
 
 	reg_value >>= 1;
+	reg_value |= sign;
 
 	z80ClearFlag(z80, (FLAG_N | FLAG_H));
 	if (lsb) {
@@ -2487,20 +2489,18 @@ void srl(struct Z80* z80, u8* reg)
 	u8 reg_value = (*reg);
 	u8 lsb = (reg_value & 0x1);
 
-	z80ClearFlag(z80, (FLAG_N | FLAG_H));
-
 	reg_value >>= 1;
-	reg_value = clearBit(reg_value, 7);
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
 	if (lsb) {
 		z80SetFlag(z80, FLAG_C);
 	}
 	else {
 		z80ClearFlag(z80, FLAG_C);
 	}
+	(*reg) = reg_value;
 
-	*reg = reg_value;
-
-	z80ClearFlag(z80, FLAG_S);
+	z80AffectFlag(z80, z80IsSigned8(reg_value), FLAG_S);
 	z80AffectFlag(z80, reg_value == 0, FLAG_Z);
 	z80AffectFlag(z80, z80IsEvenParity(reg_value), FLAG_PV);
 
@@ -2523,7 +2523,7 @@ void sll(struct Z80* z80, u8* reg)
 	u8 msb = (reg_value >> 7) & 0x1;
 
 	reg_value <<= 1;
-	reg_value = setBit(reg_value, 0);
+	reg_value |= 0x1;
 
 	z80ClearFlag(z80, (FLAG_N | FLAG_H));
 	if (msb) {
