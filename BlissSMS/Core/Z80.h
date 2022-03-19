@@ -281,6 +281,7 @@ void rlMemIx(struct Z80* z80);
 void rrMemIx(struct Z80* z80);
 void slaMemIx(struct Z80* z80);
 void sraMemIx(struct Z80* z80);
+void srlMemIx(struct Z80* z80);
 
 
 //Iy instructions
