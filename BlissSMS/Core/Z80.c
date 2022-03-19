@@ -1027,32 +1027,36 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 {
 	switch (opcode) {
-	case 0x46: bitMemIx(z80, 0); break;
-	case 0x4E: bitMemIx(z80, 1); break;
-	case 0x56: bitMemIx(z80, 2); break;
-	case 0x5E: bitMemIx(z80, 3); break;
-	case 0x66: bitMemIx(z80, 4); break;
-	case 0x6E: bitMemIx(z80, 5); break;
-	case 0x76: bitMemIx(z80, 6); break;
-	case 0x7E: bitMemIx(z80, 7); break;
+		case 0x06: rlcMemIx(z80); break;
+		case 0x0E: rrcMemIx(z80); break;
+		case 0x16: rlMemIx(z80); break;
 
-	case 0x86: resMemIx(z80, 0); break;
-	case 0x8E: resMemIx(z80, 1); break;
-	case 0x96: resMemIx(z80, 2); break;
-	case 0x9E: resMemIx(z80, 3); break;
-	case 0xA6: resMemIx(z80, 4); break;
-	case 0xAE: resMemIx(z80, 5); break;
-	case 0xB6: resMemIx(z80, 6); break;
-	case 0xBE: resMemIx(z80, 7); break;
+		case 0x46: bitMemIx(z80, 0); break;
+		case 0x4E: bitMemIx(z80, 1); break;
+		case 0x56: bitMemIx(z80, 2); break;
+		case 0x5E: bitMemIx(z80, 3); break;
+		case 0x66: bitMemIx(z80, 4); break;
+		case 0x6E: bitMemIx(z80, 5); break;
+		case 0x76: bitMemIx(z80, 6); break;
+		case 0x7E: bitMemIx(z80, 7); break;
 
-	case 0xC6: setMemIx(z80, 0); break;
-	case 0xCE: setMemIx(z80, 1); break;
-	case 0xD6: setMemIx(z80, 2); break;
-	case 0xDE: setMemIx(z80, 3); break;
-	case 0xE6: setMemIx(z80, 4); break;
-	case 0xEE: setMemIx(z80, 5); break;
-	case 0xF6: setMemIx(z80, 6); break;
-	case 0xFE: setMemIx(z80, 7); break;
+		case 0x86: resMemIx(z80, 0); break;
+		case 0x8E: resMemIx(z80, 1); break;
+		case 0x96: resMemIx(z80, 2); break;
+		case 0x9E: resMemIx(z80, 3); break;
+		case 0xA6: resMemIx(z80, 4); break;
+		case 0xAE: resMemIx(z80, 5); break;
+		case 0xB6: resMemIx(z80, 6); break;
+		case 0xBE: resMemIx(z80, 7); break;
+
+		case 0xC6: setMemIx(z80, 0); break;
+		case 0xCE: setMemIx(z80, 1); break;
+		case 0xD6: setMemIx(z80, 2); break;
+		case 0xDE: setMemIx(z80, 3); break;
+		case 0xE6: setMemIx(z80, 4); break;
+		case 0xEE: setMemIx(z80, 5); break;
+		case 0xF6: setMemIx(z80, 6); break;
+		case 0xFE: setMemIx(z80, 7); break;
 
 	default:
 		printf("\n--Unimplemented Ix Bit Instruction--: 0x%02X\n", opcode);
@@ -2333,6 +2337,31 @@ void rlc(struct Z80* z80, u8* reg)
 	z80->cycles = 8;
 }
 
+void rl(struct Z80* z80, u8* reg)
+{
+	u8 reg_value = (*reg);
+	u8 carry = getFlag(z80, FLAG_C);
+	u8  msb = (reg_value >> 7) & 0x1;
+
+	reg_value <<= 1;
+	reg_value |= carry;
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	if (msb) {
+		z80SetFlag(z80, FLAG_C);
+	}
+	else {
+		z80ClearFlag(z80, FLAG_C);
+	}
+	(*reg) = reg_value;
+
+	z80AffectFlag(z80, z80IsSigned8(reg_value), FLAG_S);
+	z80AffectFlag(z80, reg_value == 0, FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(reg_value), FLAG_PV);
+
+	z80->cycles = 8;
+}
+
 void rrc(struct Z80* z80, u8* reg)
 {
 	u8 reg_value = (*reg);
@@ -2634,6 +2663,28 @@ void rlcMemIx(struct Z80* z80)
 	u8 value = z80ReadU8(z80, z80->ix.value + offset);
 
 	rlc(z80, &value);
+	z80WriteU8(z80, value, z80->ix.value + offset);
+
+	z80->cycles = 23;
+}
+
+void rrcMemIx(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->ix.value + offset);
+
+	rrc(z80, &value);
+	z80WriteU8(z80, value, z80->ix.value + offset);
+
+	z80->cycles = 23;
+}
+
+void rlMemIx(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->ix.value + offset);
+
+	rl(z80, &value);
 	z80WriteU8(z80, value, z80->ix.value + offset);
 
 	z80->cycles = 23;
