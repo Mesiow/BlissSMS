@@ -1034,6 +1034,7 @@ void executeIxBitInstruction(struct Z80* z80, u8 opcode)
 		case 0x26: slaMemIx(z80); break;
 		case 0x2E: sraMemIx(z80); break;
 		case 0x3E: srlMemIx(z80); break;
+		case 0x36: sllMemIx(z80); break;
 
 		case 0x46: bitMemIx(z80, 0); break;
 		case 0x4E: bitMemIx(z80, 1); break;
@@ -1293,6 +1294,7 @@ void executeIyBitInstruction(struct Z80* z80, u8 opcode)
 		case 0x26: slaMemIy(z80); break;
 		case 0x2E: sraMemIy(z80); break;
 		case 0x3E: srlMemIy(z80); break;
+		case 0x36: sllMemIy(z80); break;
 
 		case 0x46: bitMemIy(z80, 0); break;
 		case 0x4E: bitMemIy(z80, 1); break;
@@ -2515,6 +2517,30 @@ void srlMemHl(struct Z80* z80)
 	z80->cycles = 15;
 }
 
+void sll(struct Z80* z80, u8* reg)
+{
+	u8 reg_value = (*reg);
+	u8 msb = (reg_value >> 7) & 0x1;
+
+	reg_value <<= 1;
+	reg_value = setBit(reg_value, 0);
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	if (msb) {
+		z80SetFlag(z80, FLAG_C);
+	}
+	else {
+		z80ClearFlag(z80, FLAG_C);
+	}
+	(*reg) = reg_value;
+
+	z80AffectFlag(z80, z80IsSigned8(reg_value), FLAG_S);
+	z80AffectFlag(z80, reg_value == 0, FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(reg_value), FLAG_PV);
+
+	z80->cycles = 8;
+}
+
 void bit(struct Z80* z80, u8 reg, u8 bit)
 {
 	u8 test = testBit(reg, bit);
@@ -2817,6 +2843,17 @@ void srlMemIx(struct Z80* z80)
 	z80->cycles = 23;
 }
 
+void sllMemIx(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->ix.value + offset);
+
+	sll(z80, &value);
+	z80WriteU8(z80, value, z80->ix.value + offset);
+
+	z80->cycles = 23;
+}
+
 void loadIyImm(struct Z80* z80)
 {
 	//ix offset byte is first in memory
@@ -3073,6 +3110,17 @@ void srlMemIy(struct Z80* z80)
 	u8 value = z80ReadU8(z80, z80->iy.value + offset);
 
 	srl(z80, &value);
+	z80WriteU8(z80, value, z80->iy.value + offset);
+
+	z80->cycles = 23;
+}
+
+void sllMemIy(struct Z80* z80)
+{
+	s8 offset = (s8)z80FetchU8(z80);
+	u8 value = z80ReadU8(z80, z80->iy.value + offset);
+
+	sll(z80, &value);
 	z80WriteU8(z80, value, z80->iy.value + offset);
 
 	z80->cycles = 23;

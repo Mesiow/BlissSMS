@@ -244,6 +244,7 @@ void sla(struct Z80* z80, u8* reg);
 void sra(struct Z80* z80, u8* reg);
 void srl(struct Z80* z80, u8* reg);
 void srlMemHl(struct Z80* z80);
+void sll(struct Z80* z80, u8* reg);
 
 void bit(struct Z80* z80, u8 reg, u8 bit);
 void bitMemHl(struct Z80* z80, u8 bitToTest);
@@ -282,6 +283,7 @@ void rrMemIx(struct Z80* z80);
 void slaMemIx(struct Z80* z80);
 void sraMemIx(struct Z80* z80);
 void srlMemIx(struct Z80* z80);
+void sllMemIx(struct Z80* z80);
 
 
 //Iy instructions
@@ -314,6 +316,7 @@ void rrMemIy(struct Z80* z80);
 void slaMemIy(struct Z80* z80);
 void sraMemIy(struct Z80* z80);
 void srlMemIy(struct Z80* z80);
+void sllMemIy(struct Z80* z80);
 
 
 //Interrupt related instructions
