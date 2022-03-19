@@ -14,7 +14,7 @@ void cpmLoadRom(struct Z80* z80, const char *path)
 	fseek(rom, 0, SEEK_END);
 	u32 file_size = ftell(rom);
 	fseek(rom, 0, SEEK_SET);
-	printf("file size: %d\n", file_size);
+	//printf("file size: %d\n", file_size);
 
 	u8* temp = (u8*)malloc(file_size * sizeof(u8));
 	if (temp != NULL) {
@@ -1099,6 +1099,10 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		case 0xB1: cpir(z80); break;
 		case 0xA9: cpd(z80); break;
 		case 0xB9: cpdr(z80); break;
+		case 0xA8: ldd(z80); break;
+		case 0xB8: lddr(z80); break;
+		case 0x67: rrd(z80); break;
+		case 0x6F: rld(z80); break;
 
 		//Arithmetic
 		case 0x42: sbcReg16(z80, &z80->hl, &z80->bc); break;
@@ -2074,6 +2078,66 @@ void ldi(struct Z80* z80)
 	z80ClearFlag(z80, (FLAG_N | FLAG_H));
 
 	z80->cycles = 16;
+}
+
+void ldd(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	z80WriteU8(z80, value, z80->de.value);
+
+	z80->hl.value--;
+	z80->de.value--;
+	z80->bc.value--;
+
+	z80ClearFlag(z80, (FLAG_H | FLAG_N));
+	z80AffectFlag(z80, z80->bc.value != 0, FLAG_PV);
+
+	z80->cycles = 16;
+}
+
+void lddr(struct Z80* z80)
+{
+	ldd(z80);
+	if (z80->bc.value != 0) {
+		z80->pc -= 2;
+		z80->cycles += 5;
+	}
+}
+
+void rrd(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+
+	u8 a = z80->af.hi;
+	z80->af.hi = (a & 0xF0) | (value & 0xF);
+	u8 result = (value >> 4) | (a << 4);
+
+	z80WriteU8(z80, result, z80->hl.value);
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	z80AffectFlag(z80, z80IsSigned8(z80->af.hi), FLAG_S);
+	z80AffectFlag(z80, z80->af.hi == 0, FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(z80->af.hi), FLAG_PV);
+
+	z80->cycles = 18;
+}
+
+void rld(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+
+	u8 a = z80->af.hi;
+	z80->af.hi = (a & 0xF0) | (value >> 4);
+	u8 result = (value << 4) | (a & 0xF);
+	
+	z80WriteU8(z80, result, z80->hl.value);
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	z80AffectFlag(z80, z80IsSigned8(z80->af.hi), FLAG_S);
+	z80AffectFlag(z80, z80->af.hi == 0, FLAG_Z);
+	z80AffectFlag(z80, z80IsEvenParity(z80->af.hi), FLAG_PV);
+
+	z80->cycles = 18;
 }
 
 void cpl(struct Z80* z80)
