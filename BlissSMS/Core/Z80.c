@@ -899,7 +899,17 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x26: loadReg8(z80, &z80->ix.hi); z80->cycles += 4; break;
 		case 0x2E: loadReg8(z80, &z80->ix.lo); z80->cycles += 4; break;
 
-		case 0x40: loadReg(z80, &z80->bc.hi, z80->bc.hi); z80->cycles += 4; break;
+		case 0x40: case 0x41: case 0x42:
+		case 0x43: case 0x47: case 0x48:
+		case 0x49: case 0x4A: case 0x4B:
+		case 0x4F: case 0x50: case 0x51:
+		case 0x52: case 0x53: case 0x57:
+		case 0x58: case 0x59: case 0x5A:
+		case 0x5B: case 0x5F: case 0x78:
+		case 0x79: case 0x7A: case 0x7B:
+		case 0x7F:
+		executeMainInstruction(z80, opcode); z80->cycles += 4; break;
+
 		case 0x44: loadReg(z80, &z80->bc.hi, z80->ix.hi); z80->cycles += 4; break;
 		case 0x45: loadReg(z80, &z80->bc.hi, z80->ix.lo); z80->cycles += 4; break;
 		case 0x4C: loadReg(z80, &z80->bc.lo, z80->ix.hi); z80->cycles += 4; break;
@@ -908,6 +918,23 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 		case 0x55: loadReg(z80, &z80->de.hi, z80->ix.lo); z80->cycles += 4; break;
 		case 0x5C: loadReg(z80, &z80->de.lo, z80->ix.hi); z80->cycles += 4; break;
 		case 0x5D: loadReg(z80, &z80->de.lo, z80->ix.lo); z80->cycles += 4; break;
+
+		case 0x60: loadReg(z80, &z80->ix.hi, z80->bc.hi); z80->cycles += 4; break;
+		case 0x61: loadReg(z80, &z80->ix.hi, z80->bc.lo); z80->cycles += 4; break;
+		case 0x62: loadReg(z80, &z80->ix.hi, z80->de.hi); z80->cycles += 4; break;
+		case 0x63: loadReg(z80, &z80->ix.hi, z80->de.lo); z80->cycles += 4; break;
+		case 0x64: loadReg(z80, &z80->ix.hi, z80->ix.hi); z80->cycles += 4; break;
+		case 0x65: loadReg(z80, &z80->ix.hi, z80->ix.lo); z80->cycles += 4; break;
+		case 0x67: loadReg(z80, &z80->ix.hi, z80->af.hi); z80->cycles += 4; break;
+		case 0x68: loadReg(z80, &z80->ix.lo, z80->bc.hi); z80->cycles += 4; break;
+		case 0x69: loadReg(z80, &z80->ix.lo, z80->bc.lo); z80->cycles += 4; break;
+		case 0x6A: loadReg(z80, &z80->ix.lo, z80->de.hi); z80->cycles += 4; break;
+		case 0x6B: loadReg(z80, &z80->ix.lo, z80->de.lo); z80->cycles += 4; break;
+		case 0x6C: loadReg(z80, &z80->ix.lo, z80->ix.hi); z80->cycles += 4; break;
+		case 0x6D: loadReg(z80, &z80->ix.lo, z80->ix.lo); z80->cycles += 4; break;
+		case 0x6F: loadReg(z80, &z80->ix.lo, z80->af.hi); z80->cycles += 4; break;
+		case 0x7C: loadReg(z80, &z80->af.hi, z80->ix.hi); z80->cycles += 4; break;
+		case 0x7D: loadReg(z80, &z80->af.hi, z80->ix.lo); z80->cycles += 4; break;
 
 		//Load value from ix + offset into reg8
 		case 0x46: loadRegIx(z80, &z80->bc.hi); break;
@@ -1122,7 +1149,17 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 		case 0x26: loadReg8(z80, &z80->iy.hi); z80->cycles += 4; break;
 		case 0x2E: loadReg8(z80, &z80->iy.lo); z80->cycles += 4; break;
 
-		case 0x40: loadReg(z80, &z80->bc.hi, z80->bc.hi); z80->cycles += 4; break;
+		case 0x40: case 0x41: case 0x42:
+		case 0x43: case 0x47: case 0x48:
+		case 0x49: case 0x4A: case 0x4B:
+		case 0x4F: case 0x50: case 0x51:
+		case 0x52: case 0x53: case 0x57:
+		case 0x58: case 0x59: case 0x5A:
+		case 0x5B: case 0x5F: case 0x78:
+		case 0x79: case 0x7A: case 0x7B:
+		case 0x7F:
+		executeMainInstruction(z80, opcode); z80->cycles += 4; break;
+
 		case 0x44: loadReg(z80, &z80->bc.hi, z80->iy.hi); z80->cycles += 4; break;
 		case 0x45: loadReg(z80, &z80->bc.hi, z80->iy.lo); z80->cycles += 4; break;
 		case 0x4C: loadReg(z80, &z80->bc.lo, z80->iy.hi); z80->cycles += 4; break;
@@ -1131,6 +1168,23 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 		case 0x55: loadReg(z80, &z80->de.hi, z80->iy.lo); z80->cycles += 4; break;
 		case 0x5C: loadReg(z80, &z80->de.lo, z80->iy.hi); z80->cycles += 4; break;
 		case 0x5D: loadReg(z80, &z80->de.lo, z80->iy.lo); z80->cycles += 4; break;
+
+		case 0x60: loadReg(z80, &z80->iy.hi, z80->bc.hi); z80->cycles += 4; break;
+		case 0x61: loadReg(z80, &z80->iy.hi, z80->bc.lo); z80->cycles += 4; break;
+		case 0x62: loadReg(z80, &z80->iy.hi, z80->de.hi); z80->cycles += 4; break;
+		case 0x63: loadReg(z80, &z80->iy.hi, z80->de.lo); z80->cycles += 4; break;
+		case 0x64: loadReg(z80, &z80->iy.hi, z80->iy.hi); z80->cycles += 4; break;
+		case 0x65: loadReg(z80, &z80->iy.hi, z80->iy.lo); z80->cycles += 4; break;
+		case 0x67: loadReg(z80, &z80->iy.hi, z80->af.hi); z80->cycles += 4; break;
+		case 0x68: loadReg(z80, &z80->iy.lo, z80->bc.hi); z80->cycles += 4; break;
+		case 0x69: loadReg(z80, &z80->iy.lo, z80->bc.lo); z80->cycles += 4; break;
+		case 0x6A: loadReg(z80, &z80->iy.lo, z80->de.hi); z80->cycles += 4; break;
+		case 0x6B: loadReg(z80, &z80->iy.lo, z80->de.lo); z80->cycles += 4; break;
+		case 0x6C: loadReg(z80, &z80->iy.lo, z80->iy.hi); z80->cycles += 4; break;
+		case 0x6D: loadReg(z80, &z80->iy.lo, z80->iy.lo); z80->cycles += 4; break;
+		case 0x6F: loadReg(z80, &z80->iy.lo, z80->af.hi); z80->cycles += 4; break;
+		case 0x7C: loadReg(z80, &z80->af.hi, z80->iy.hi); z80->cycles += 4; break;
+		case 0x7D: loadReg(z80, &z80->af.hi, z80->iy.lo); z80->cycles += 4; break;
 
 		//Load value from ix + offset into reg8
 		case 0x46: loadRegIy(z80, &z80->bc.hi); break;
