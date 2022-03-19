@@ -235,6 +235,7 @@ void cpi(struct Z80* z80);
 void cpir(struct Z80* z80);
 
 //Bit instructions
+void rlc(struct Z80* z80, u8* reg);
 void rrc(struct Z80* z80, u8* reg);
 void rrcMemHl(struct Z80* z80);
 void srl(struct Z80* z80, u8* reg);
@@ -270,6 +271,7 @@ void jpMemIx(struct Z80* z80);
 void bitMemIx(struct Z80* z80, u8 bitToTest);
 void resMemIx(struct Z80* z80, u8 bit);
 void setMemIx(struct Z80* z80, u8 bit);
+void rlcMemIx(struct Z80* z80);
 
 
 //Iy instructions
