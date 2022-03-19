@@ -236,15 +236,22 @@ void cpir(struct Z80* z80);
 
 //Bit instructions
 void rlc(struct Z80* z80, u8* reg);
+void rlcMemHl(struct Z80* z80);
 void rl(struct Z80* z80, u8* reg);
+void rlMemHl(struct Z80* z80);
 void rrc(struct Z80* z80, u8* reg);
+void rrcMemHl(struct Z80* z80);
 void rr(struct Z80* z80, u8* reg);
+void rrMemHl(struct Z80* z80);
 void rrcMemHl(struct Z80* z80);
 void sla(struct Z80* z80, u8* reg);
+void slaMemHl(struct Z80* z80);
 void sra(struct Z80* z80, u8* reg);
+void sraMemHl(struct Z80* z80);
 void srl(struct Z80* z80, u8* reg);
 void srlMemHl(struct Z80* z80);
 void sll(struct Z80* z80, u8* reg);
+void sllMemHl(struct Z80* z80);
 
 void bit(struct Z80* z80, u8 reg, u8 bit);
 void bitMemHl(struct Z80* z80, u8 bitToTest);
