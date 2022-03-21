@@ -1,5 +1,6 @@
 #include "Io.h"
 #include "Vdp.h"
+#include "Joypad.h"
 #include "Bus.h"
 
 void ioInit(struct Io* io)
@@ -11,6 +12,11 @@ void ioInit(struct Io* io)
 void ioConnectVdp(struct Io* io, struct Vdp* vdp)
 {
 	io->vdp = vdp;
+}
+
+void ioConnectJoypad(struct Io* io, struct Joypad* joy)
+{
+	io->joy = joy;
 }
 
 void ioConnectBus(struct Io* io, struct Bus* bus)
@@ -51,9 +57,6 @@ u8 ioReadU8(struct Io* io, u8 address)
 			return vdpReadControlPort(io->vdp);
 	}
 	else if (address >= 0xC0 && address <= 0xFF) {
-		/*if (even_address)
-			return io->ioAB;
-		else
-			return io->ioBMisc;*/
+		if (even_address) return joypadReadPort(io->joy);
 	}
 }
