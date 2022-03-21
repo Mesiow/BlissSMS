@@ -24,9 +24,6 @@
     <ClCompile Include="Core\System.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Z80.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Io.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -40,6 +37,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Core\Log.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Z80.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Joypad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -66,6 +69,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core\Log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Joypad.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
