@@ -14,7 +14,6 @@ void cpmLoadRom(struct Z80* z80, const char* path)
 	fseek(rom, 0, SEEK_END);
 	u32 file_size = ftell(rom);
 	fseek(rom, 0, SEEK_SET);
-	//printf("file size: %d\n", file_size);
 
 	u8* temp = (u8*)malloc(file_size * sizeof(u8));
 	if (temp != NULL) {
@@ -174,7 +173,6 @@ void z80HandleInterrupts(struct Z80* z80, struct Vdp* vdp)
 	if (vdpPendingInterrupts(vdp)) {
 		//Maskable interrupts enabled
 		if (z80->iff1) {
-			printf("interrupt fired\n");
 			if (z80->interrupt_mode == One) {
 				//disable interrupts and jump to routine
 				z80->iff1 = z80->iff2 = 0;
@@ -340,7 +338,6 @@ u16 z80Clock(struct Z80* z80)
 				return;
 			}
 		}
-		//printf("pc: 0x%04X\n", z80->pc);
 		u8 opcode = z80ReadU8(z80, z80->pc);
 		z80->pc++;
 
