@@ -65,7 +65,7 @@ void z80DebugOutput(struct Z80* z80)
 
 void z80Init(struct Z80* z80)
 {
-	z80->cpm_stub_enabled = 1;
+	z80->cpm_stub_enabled = 0;
 
 	if (z80->cpm_stub_enabled) {
 		//Cpm stub for testing our z80 core
@@ -174,6 +174,7 @@ void z80HandleInterrupts(struct Z80* z80, struct Vdp* vdp)
 	if (vdpPendingInterrupts(vdp)) {
 		//Maskable interrupts enabled
 		if (z80->iff1) {
+			printf("interrupt fired\n");
 			if (z80->interrupt_mode == One) {
 				//disable interrupts and jump to routine
 				z80->iff1 = z80->iff2 = 0;
@@ -339,6 +340,7 @@ u16 z80Clock(struct Z80* z80)
 				return;
 			}
 		}
+		//printf("pc: 0x%04X\n", z80->pc);
 		u8 opcode = z80ReadU8(z80, z80->pc);
 		z80->pc++;
 
@@ -2141,7 +2143,7 @@ void ina(struct Z80* z80)
 
 void out(struct Z80* z80, u8 destPort, u8 sourceReg)
 {
-	ioWriteU8(z80->io, destPort, sourceReg);
+	ioWriteU8(z80->io, sourceReg, destPort);
 	z80->cycles = 12;
 }
 
