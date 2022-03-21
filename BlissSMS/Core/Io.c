@@ -1,12 +1,11 @@
 #include "Io.h"
 #include "Vdp.h"
+#include "Bus.h"
 
 void ioInit(struct Io* io)
 {
-	io->memoryControl = 0x0;
-	io->ioControl = 0x0;
-	io->ioAB = 0x0;
-	io->ioBMisc = 0x0;
+	io->vdp = NULL;
+	io->bus = NULL;
 }
 
 void ioConnectVdp(struct Io* io, struct Vdp* vdp)
@@ -14,14 +13,16 @@ void ioConnectVdp(struct Io* io, struct Vdp* vdp)
 	io->vdp = vdp;
 }
 
+void ioConnectBus(struct Io* io, struct Bus* bus)
+{
+	io->bus = bus;
+}
+
 void ioWriteU8(struct Io* io, u8 value, u8 address)
 {
 	u8 even_address = ((address & 0x1) == 0);
 	if (address >= 0x0 && address <= 0x3F) {
-		if (even_address)
-			io->memoryControl = value;
-		else
-			io->ioControl = value;
+		if (even_address) writeMemoryControl(io->bus, value);
 	}
 	else if (address >= 0x40 && address <= 0x7F) {
 		//writes to here goes to the psg
@@ -50,9 +51,9 @@ u8 ioReadU8(struct Io* io, u8 address)
 			return vdpReadControlPort(io->vdp);
 	}
 	else if (address >= 0xC0 && address <= 0xFF) {
-		if (even_address)
+		/*if (even_address)
 			return io->ioAB;
 		else
-			return io->ioBMisc;
+			return io->ioBMisc;*/
 	}
 }

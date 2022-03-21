@@ -11,7 +11,10 @@ void memoryBusInit(struct Bus* bus)
 	memset(bus->systemRam, 0x0, SYSRAM_SIZE);
 	memset(bus->bios, 0x0, BIOS_SIZE);
 
-	bus->biosEnabled = 1;
+	bus->wram_enabled = 0;
+	bus->cart_slot_enabled = 0;
+	bus->bios_enabled = 0;
+	bus->io_enabled = 0;
 }
 
 void memoryBusLoadBios(struct Bus* bus, const char *path)
@@ -21,6 +24,7 @@ void memoryBusLoadBios(struct Bus* bus, const char *path)
 		printf("---Bios file could not be found---\n");
 		return;
 	}
+	bus->bios_enabled = 1;
 	fread(bus->bios, sizeof(u8), BIOS_SIZE, bios);
 	fclose(bios);
 }
@@ -34,6 +38,7 @@ void memoryBusLoadCartridge(struct Bus* bus, struct Cart* cart)
 	//paging registers
 	switch (cart->romsize) {
 		case CART_32K: {
+			printf("32k rom\n");
 			//Map cart to rom from 0x0 - 0x8000 (32k)
 			memcpy(bus->rom, cart->memory, ROM_SIZE);
 			memcpy(bus->romslot0, cart->memory + ROM_SIZE, ROM_MAPPER_0_SIZE);
@@ -67,13 +72,19 @@ void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address)
 	}
 }
 
+void writeMemoryControl(struct Bus* bus, u8 value)
+{
+	bus->cart_slot_enabled = ((value >> 6) & 0x1) == 0;
+	bus->wram_enabled = ((value >> 4) & 0x1) == 0;
+	bus->bios_enabled = ((value >> 3) & 0x1) == 0;
+	bus->io_enabled = ((value >> 2) & 0x1) == 0;
+}
+
 u8 memoryBusReadU8(struct Bus* bus, u16 address)
 {
 	//u8 bios_enabled = (((ioBus->memoryControl >> 3) & 0x1) == 0x0);
-	if (bus->biosEnabled) {
-		if (address >= ROM_START && address <= (BIOS_SIZE - 1)) {
-			return bus->bios[address & (BIOS_SIZE - 1)];
-		}
+	if (address < BIOS_SIZE && bus->bios_enabled) {
+		return bus->bios[address & (BIOS_SIZE - 1)];
 	}
 
 	if (address >= ROM_START && address <= ROM_END) {

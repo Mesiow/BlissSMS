@@ -56,7 +56,12 @@ struct Bus {
 	u8 systemRam[SYSRAM_SIZE];
 	u8 bios[SYSRAM_SIZE];
 
-	u8 biosEnabled;
+	//Memory control bits
+	u8 cart_slot_enabled;
+	u8 wram_enabled;
+	u8 bios_enabled;
+	u8 io_enabled;
+
 	struct Cart* cart;
 };
 
@@ -65,6 +70,7 @@ void memoryBusLoadBios(struct Bus* bus, const char *path);
 void memoryBusLoadCartridge(struct Bus* bus, struct Cart *cart);
 
 void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address);
+void writeMemoryControl(struct Bus* bus, u8 value);
 u8 memoryBusReadU8(struct Bus* bus, u16 address);
 
 u8 memoryBusReadRamMapper(struct Bus* bus);
