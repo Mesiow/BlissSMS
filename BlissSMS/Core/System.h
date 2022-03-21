@@ -4,11 +4,11 @@
 #include "Z80.h"
 #include "Vdp.h"
 #include "Cart.h"
+#include "Log.h"
 
 #define CPU_CLOCK 3579545
 #define MAX_CYCLES_PER_FRAME CPU_CLOCK / 60
 #define SCANLINES_PER_FRAME 262
-#define CYCLES_PER_SCANLINE 3420
 #define NTSC_FPS 60
 #define CYCLES_PER_SCANLINE CPU_CLOCK / SCANLINES_PER_FRAME / NTSC_FPS //227 cycles
 
@@ -19,7 +19,10 @@ struct System {
 	struct Vdp vdp;
 	struct Cart cart;
 
+	struct Log log;
+
 	u8 running;
+	u8 run_debugger;
 };
 
 void systemInit(struct System* sys);
