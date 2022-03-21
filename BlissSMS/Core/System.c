@@ -52,7 +52,6 @@ void systemRunEmulation(struct System* sys)
 
 			z80HandleInterrupts(z80, vdp);
 		}
-		//update joypad
 		vdpBufferPixels(vdp);
 	}
 }
@@ -60,6 +59,27 @@ void systemRunEmulation(struct System* sys)
 void systemRenderGraphics(struct System* sys, sfRenderWindow *window)
 {
 	vdpDisplayGraphics(&sys->vdp, window);
+}
+
+void systemHandleInput(struct System *sys, sfEvent* ev)
+{
+	struct Joypad* joy = &sys->joy;
+	if (ev->type == sfEvtKeyPressed) {
+		if (ev->key.code == Up) joypadButtonPressed(joy, Up, 1);
+		if (ev->key.code == Down) joypadButtonPressed(joy, Down, 1);
+		if (ev->key.code == Left) joypadButtonPressed(joy, Left, 1);
+		if (ev->key.code == Right) joypadButtonPressed(joy, Right, 1);
+		if (ev->key.code == A) joypadButtonPressed(joy, A, 1);
+		if (ev->key.code == B) joypadButtonPressed(joy, B, 1);
+	}
+	else if (ev->type == sfEvtKeyReleased) {
+		if (ev->key.code == Up) joypadButtonPressed(joy, Up, 0);
+		if (ev->key.code == Down) joypadButtonPressed(joy, Down, 0);
+		if (ev->key.code == Left) joypadButtonPressed(joy, Left, 0);
+		if (ev->key.code == Right) joypadButtonPressed(joy, Right, 0);
+		if (ev->key.code == A) joypadButtonPressed(joy, A, 0);
+		if (ev->key.code == B) joypadButtonPressed(joy, B, 0);
+	}
 }
 
 void systemFree(struct System* sys)
