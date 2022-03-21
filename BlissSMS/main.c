@@ -25,6 +25,7 @@ int main(int argc, char *argv[]) {
 	sfEvent ev;
 	while (sfRenderWindow_isOpen(window)) {
 		while (sfRenderWindow_pollEvent(window, &ev)) {
+			systemHandleInput(&sms, &ev);
 			if (ev.type == sfEvtClosed) {
 				sfRenderWindow_close(window);
 			}
