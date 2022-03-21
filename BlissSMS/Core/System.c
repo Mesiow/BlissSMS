@@ -20,6 +20,9 @@ void systemInit(struct System* sys)
 	vdpConnectIo(&sys->vdp, &sys->io);
 	ioConnectVdp(&sys->io, &sys->vdp);
 
+	joypadInit(&sys->joy);
+	ioConnectJoypad(&sys->io, &sys->joy);
+
 	//cartInit(&sys->cart);
 	//cartLoad(&sys->cart, "roms/Astro Flash (Japan).sms");
 	//memoryBusLoadCartridge(&sys->bus, &sys->cart);

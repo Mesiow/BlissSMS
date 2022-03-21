@@ -3,6 +3,7 @@
 #include "Io.h"
 #include "Z80.h"
 #include "Vdp.h"
+#include "Joypad.h"
 #include "Cart.h"
 #include "Log.h"
 
@@ -17,6 +18,7 @@ struct System {
 	struct Io io;
 	struct Z80 z80;
 	struct Vdp vdp;
+	struct Joypad joy;
 	struct Cart cart;
 
 	struct Log log;
