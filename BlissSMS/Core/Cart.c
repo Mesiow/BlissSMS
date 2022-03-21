@@ -43,6 +43,8 @@ void cartLoad(struct Cart* cart, const char* path)
 
 void cartFree(struct Cart* cart)
 {
-	if (cart->memory != NULL)
-		free(cart->memory);
+	if (cart != NULL) {
+		if (cart->memory != NULL)
+			free(cart->memory);
+	}
 }
