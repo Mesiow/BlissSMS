@@ -13,6 +13,11 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	sfImage* img = sfImage_createFromFile("res/icon1.png");
+	s32 w = sfImage_getSize(img).x;
+	s32 h = sfImage_getSize(img).y;
+	sfRenderWindow_setIcon(window, w, h, sfImage_getPixelsPtr(img));
+
 	struct System sms;
 	systemInit(&sms);
 
@@ -27,7 +32,7 @@ int main(int argc, char *argv[]) {
 
 		systemRunEmulation(&sms);
 
-		sfRenderWindow_clear(window, sfBlack);
+		sfRenderWindow_clear(window, sfTransparent);
 
 		systemRenderGraphics(&sms, window);
 
@@ -37,6 +42,8 @@ int main(int argc, char *argv[]) {
 
 	systemFree(&sms);
 
+	sfImage_destroy(img);
+	sfRenderWindow_destroy(window);
 
 	return 0;
 }
