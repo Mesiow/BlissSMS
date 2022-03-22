@@ -25,11 +25,6 @@
 #define SYSRAM_SIZE 0x2000
 #define BIOS_SIZE 0x2000
 
-#define CART_RAM_MAPPER_CTRL 0xFFFC
-#define MAPPER_SLOT_0_CTRL 0xFFFD
-#define MAPPER_SLOT_1_CTRL 0xFFFE
-#define MAPPER_SLOT_2_CTRL 0xFFFF
-
 #define ROM_START 0x0000
 #define ROM_END 0x3FF
 #define ROM_SLOT_0_START 0x400
@@ -49,11 +44,8 @@
 #define ROM_MAPPING_2 0xFFFF
 
 struct Bus {
-	u8 rom[ROM_SIZE];
-	u8 romslot0[ROM_MAPPER_0_SIZE];
-	u8 romslot1[ROM_MAPPER_1_SIZE];
-	u8 ramslot2[RAM_MAPPER_2_SIZE];
-	u8 systemRam[SYSRAM_SIZE];
+	u8 memory[0xC000]; //0 - BFFF (rom - rom mapper 2)
+	u8 system_ram[SYSRAM_SIZE];
 	u8 bios[SYSRAM_SIZE];
 
 	//Memory control bits
@@ -62,16 +54,22 @@ struct Bus {
 	u8 bios_enabled;
 	u8 io_enabled;
 
+	//Rom mapping registers
+	u8 rom_bank0_register;
+	u8 rom_bank1_register;
+	u8 rom_bank2_register;
+
+	u8 cart_loaded;
+
 	struct Cart* cart;
 };
 
 void memoryBusInit(struct Bus* bus);
 void memoryBusLoadBios(struct Bus* bus, const char *path);
-void memoryBusLoadCartridge(struct Bus* bus, struct Cart *cart);
+void memoryBusLoadCart(struct Bus* bus, struct Cart* cart);
 
 void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address);
 void writeMemoryControl(struct Bus* bus, u8 value);
 u8 memoryBusReadU8(struct Bus* bus, u16 address);
 
-u8 memoryBusReadRamMapper(struct Bus* bus);
-u8 memoryBusReadRomBankRegister(struct Bus* bus, u16 rombank);
+u8 memoryBusHandleRomMappingRead(struct Bus* bus, u16 address, u8 romBank);
