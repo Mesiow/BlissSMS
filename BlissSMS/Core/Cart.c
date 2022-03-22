@@ -41,6 +41,11 @@ void cartLoad(struct Cart* cart, const char* path)
 	fclose(rom);
 }
 
+u8 cartReadU8(struct Cart* cart, u16 address)
+{
+	return cart->memory[address & (cart->romsize - 1)];
+}
+
 void cartFree(struct Cart* cart)
 {
 	if (cart != NULL) {

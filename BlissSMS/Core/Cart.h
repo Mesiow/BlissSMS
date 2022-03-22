@@ -16,4 +16,6 @@ struct Cart {
 
 void cartInit(struct Cart* cart);
 void cartLoad(struct Cart* cart, const char* path);
+u8 cartReadU8(struct Cart* cart, u16 address);
+
 void cartFree(struct Cart* cart);
