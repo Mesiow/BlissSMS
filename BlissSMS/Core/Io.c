@@ -58,5 +58,6 @@ u8 ioReadU8(struct Io* io, u8 address)
 	}
 	else if (address >= 0xC0 && address <= 0xFF) {
 		if (even_address) return joypadReadPort(io->joy);
+		else return 0xFF;
 	}
 }
