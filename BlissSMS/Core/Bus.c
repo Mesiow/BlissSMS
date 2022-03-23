@@ -14,6 +14,10 @@ void memoryBusInit(struct Bus* bus)
 	bus->io_enabled = 0;
 	bus->cart_loaded = 0;
 
+	bus->system_ram[0x1FFD] = 0x0;
+	bus->system_ram[0x1FFE] = 0x1;
+	bus->system_ram[0x1FFF] = 0x2;
+
 	bus->rom_bank0_register = 0;
 	bus->rom_bank1_register = 1;
 	bus->rom_bank2_register = 2;
@@ -35,7 +39,11 @@ void memoryBusLoadCart(struct Bus* bus, struct Cart* cart)
 {
 	bus->cart = cart;
 	bus->cart_loaded = 1;
-	memcpy(bus->memory, cart->memory, 0xC000);
+
+	if (cart->romsize == CART_32K)
+		memcpy(bus->memory, cart->memory, 0x8000);
+	else
+		memcpy(bus->memory, cart->memory, 0xC000); //fill the full 48k rom space
 }
 
 void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address)
@@ -74,8 +82,11 @@ u8 memoryBusReadU8(struct Bus* bus, u16 address)
 		return bus->bios[address & (BIOS_SIZE - 1)];
 	}
 
+
 	if (bus->cart_slot_enabled) {
-	
+		if (!bus->cart_loaded)
+			return 0;
+
 		if (address >= ROM_START && address <= ROM_END) {
 			return bus->memory[address];
 		}
