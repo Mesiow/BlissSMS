@@ -23,9 +23,12 @@ void systemInit(struct System* sys)
 	joypadInit(&sys->joy);
 	ioConnectJoypad(&sys->io, &sys->joy);
 
-	//cartInit(&sys->cart);
+	cartInit(&sys->cart);
 	//cartLoad(&sys->cart, "roms/Astro Flash (Japan).sms");
-	//memoryBusLoadCartridge(&sys->bus, &sys->cart);
+	//cartLoad(&sys->cart, "roms/Sonic The Hedgehog (USA, Europe).sms");
+	//cartLoad(&sys->cart, "test_roms/Not_Only_Words.sms");
+	cartLoad(&sys->cart, "roms/Teddy Boy (USA, Europe).sms");
+	memoryBusLoadCart(&sys->bus, &sys->cart);
 
 	sys->running = 1;
 	sys->run_debugger = 0;
@@ -38,15 +41,11 @@ void systemRunEmulation(struct System* sys)
 		struct Z80* z80 = &sys->z80;
 
 		s32 cycles_this_frame = 0;
-		while (cycles_this_frame < MAX_CYCLES_PER_FRAME) {
-			if (sys->run_debugger)
-				compareAgainstLog(&sys->log, z80);
-
+		while (!vdpFrameComplete(vdp)) {
 			u16 cycles = z80Clock(z80);
 			cycles_this_frame += cycles;
 
 			vdpUpdate(vdp, cycles);
-			//psgUpdate(cycles);
 			if (sys->z80.process_interrupt_delay)
 				continue;
 
@@ -85,6 +84,7 @@ void systemHandleInput(struct System *sys, sfEvent* ev)
 void systemFree(struct System* sys)
 {
 	//cartFree(&sys->cart);
+	vdpFree(&sys->vdp);
 }
 
 void tickCpu(struct System* sys)
