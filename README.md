@@ -5,8 +5,8 @@ A blissful Sega Master System emulator
 
 ## Z80 Cpu
 ### Passes zexdoc instruction exerciser
-
-## Showcase
+![](res/z1.PNG)
+![](res/z2.PNG)
 
 ## Showcase
 ![](Screenshots/doom.PNG)
