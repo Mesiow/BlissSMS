@@ -55,6 +55,8 @@ struct Bus {
 	u8 io_enabled;
 
 	//Rom mapping registers
+	u8 page2_ram;
+	u8 cart_ram_page;
 	u8 rom_bank0_register;
 	u8 rom_bank1_register;
 	u8 rom_bank2_register;

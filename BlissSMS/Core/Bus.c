@@ -18,6 +18,8 @@ void memoryBusInit(struct Bus* bus)
 	bus->system_ram[0x1FFE] = 0x1;
 	bus->system_ram[0x1FFF] = 0x2;
 
+	bus->page2_ram = 0;
+	bus->cart_ram_page = 0;
 	bus->rom_bank0_register = 0;
 	bus->rom_bank1_register = 1;
 	bus->rom_bank2_register = 2;
@@ -48,6 +50,16 @@ void memoryBusLoadCart(struct Bus* bus, struct Cart* cart)
 
 void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address)
 {	
+	if (address < 0x8000) return;
+
+	if (address >= RAM_SLOT_2_START && address <= RAM_SLOT_2_END) {
+		if (bus->page2_ram == 1) { //page 2 mapped as cart ram
+			u32 ram_bank_addr = address + (0x4000 * bus->cart_ram_page);
+			ram_bank_addr -= 0x8000;
+			cartWriteU8(bus->cart, value, ram_bank_addr);
+		}
+	}
+
 	if (address >= SYSRAM_START && address <= SYSRAM_END) {
 		bus->system_ram[address & (SYSRAM_SIZE - 1)] = value;
 	}
@@ -57,14 +69,30 @@ void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address)
 	}
 
 	//Rom mapping registers
-	if (address == 0xFFFD) {
+	if (address == 0xFFFC) { //ram/rom control
+		u8 b3 = testBit(value, 3);
+		if (b3) { //page 2 mapped as on board cart ram
+			bus->page2_ram = 1;
+			if (testBit(value, 2))
+				bus->cart_ram_page = 1; //use second page of cart ram
+			else
+				bus->cart_ram_page = 0; //use first page of cart ram
+		}
+		else { //page 2 mapped as rom
+			bus->page2_ram = 0;
+		}
+	}
+	else if (address == 0xFFFD) {
 		bus->rom_bank0_register = value;
 	}
 	else if (address == 0xFFFE) {
 		bus->rom_bank1_register = value;
 	}
 	else if (address == 0xFFFF) {
-		bus->rom_bank2_register = value;
+		if (bus->page2_ram == 0) {
+			//mapped as rom
+			bus->rom_bank2_register = value;
+		}
 	}
 }
 
@@ -81,7 +109,6 @@ u8 memoryBusReadU8(struct Bus* bus, u16 address)
 	if (address < BIOS_SIZE && bus->bios_enabled) {
 		return bus->bios[address & (BIOS_SIZE - 1)];
 	}
-
 
 	if (bus->cart_slot_enabled) {
 		if (!bus->cart_loaded)
@@ -123,19 +150,25 @@ u8 memoryBusHandleRomMappingRead(struct Bus* bus, u16 address, u8 romBank)
 	switch (romBank) {
 		case 0: {
 			u32 bank_address = address + (0x4000 * bus->rom_bank0_register);
-			return cartReadU8(bus->cart, bank_address);
+			return cartReadU8(bus->cart, bank_address, 0);
 		}
 		break;
 		case 1: {
 			u32 bank_address = address + (0x4000 * bus->rom_bank1_register);
 			bank_address -= 0x4000; //get actual bank offset
-			return cartReadU8(bus->cart, bank_address);
+			return cartReadU8(bus->cart, bank_address, 0);
 		}
 		break;
 		case 2: {
+			if (bus->page2_ram == 1) { //cart ram mapped here
+				u32 ram_bank_addr = address + (0x4000 * bus->cart_ram_page);
+				ram_bank_addr -= 0x8000;
+				return cartReadU8(bus->cart, ram_bank_addr, 1);
+			}
+
 			u32 bank_address = address + (0x4000 * bus->rom_bank2_register);
 			bank_address -= 0x8000;
-			return cartReadU8(bus->cart, bank_address);
+			return cartReadU8(bus->cart, bank_address, 0);
 		}
 		break;
 		default:
