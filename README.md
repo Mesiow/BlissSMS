@@ -3,7 +3,7 @@
 
 ## Z80 Cpu
 ### Passes zexdoc instruction exerciser
-![](z1.PNG)
+![](BlissSMS/res/z1.PNG)
 ![](BlissSMS/res/z2.PNG)
 
 ## Showcase
