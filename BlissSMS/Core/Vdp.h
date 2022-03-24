@@ -39,14 +39,13 @@ struct Vdp {
 	//Internal vdp registers
 	u8 registers[0xB];
 	u16 cycles;
-	u8 line_int_pending;
 
 	//Vdp Ports
 	u16 vdpControl;
 	u16 vdpData;
-	u8 vcounter;
+	u16 vcounter;
 	u16 hcounter;
-	u16 lineCounter;
+	u8 lineCounter;
 
 	//Flags
 	u8 status_flags; //holds frame interrupt pending flag, sprite overflow flag and sprite collision flag
@@ -55,16 +54,24 @@ struct Vdp {
 					  //otherwise writes go to cram
 	u8 readbuffer;
 
+	u8 frame_int_pending;
+	u8 line_int_pending;
+
 	struct sfImage* pixels;
 	struct sfTexture* framebuffer;
 	struct sfSprite* frame;
+
+	u16 display_width;
+	u16 display_height;
+	u8 frame_complete;
 
 	struct Io* io;
 };
 
 void vdpInit(struct Vdp* vdp);
+void vdpFree(struct Vdp* vdp);
 void vdpConnectIo(struct Vdp *vdp, struct Io* io);
-void vdpUpdate(struct Vdp *vdp, s32 cycles);
+void vdpUpdate(struct Vdp *vdp, u8 cycles);
 void vdpDisplayGraphics(struct Vdp* vdp, sfRenderWindow *window);
 void vdpRender(struct Vdp* vdp);
 void vdpRenderBackground(struct Vdp* vdp);
@@ -73,6 +80,7 @@ void vdpSetMode(struct Vdp* vdp);
 void vdpBufferPixels(struct Vdp* vdp);
 u8 vdpIsDisplayVisible(struct Vdp* vdp);
 u8 vdpIsDisplayActive(struct Vdp* vdp);
+u8 vdpFrameComplete(struct Vdp* vdp);
 
 void vdpWriteControlPort(struct Vdp* vdp, u8 value);
 void vdpWriteDataPort(struct Vdp* vdp, u8 value);
@@ -82,13 +90,12 @@ u8 vdpReadDataPort(struct Vdp* vdp);
 void vdpIncrementAddressRegister(struct Vdp* vdp);
 u8 vdpGetCodeRegister(struct Vdp* vdp); 
 u16 vdpGetAddressRegister(struct Vdp* vdp);
+u16 vdpGetNameTableBaseAddress(struct Vdp* vdp);
+u16 vdpGetSpriteAttributeTableBaseAddress(struct Vdp* vdp);
 
+sfColor vdpGetColor(u8 red, u8 green, u8 blue);
+u8 vdpGetColorShade(u8 color);
 
 u8 vdpPendingInterrupts(struct Vdp *vdp);
-//Frame interrupt
-u8 vdpCheckFrameInterruptEnable(struct Vdp* vdp);
-u8 vdpVBlankIrqPending(struct Vdp* vdp);
-
-//Line interrupt
-u8 vdpLineInterruptEnable(struct Vdp* vdp);
-u8 vdpLineInterruptPending(struct Vdp* vdp);
+u8 vdpVBlankIrqReady(struct Vdp* vdp);
+u8 vdpLineInterruptReady(struct Vdp* vdp);
