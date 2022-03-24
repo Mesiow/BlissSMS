@@ -9,6 +9,7 @@
 
 struct Cart {
 	u8* memory;
+	u8 ram_banks[0x8000]; //on board cartridge ram
 	u8 sram[SRAM_SIZE];
 	u8 region;
 	u32 romsize;
@@ -16,6 +17,8 @@ struct Cart {
 
 void cartInit(struct Cart* cart);
 void cartLoad(struct Cart* cart, const char* path);
-u8 cartReadU8(struct Cart* cart, u16 address);
+
+void cartWriteU8(struct Cart* cart, u8 value, u32 address);
+u8 cartReadU8(struct Cart* cart, u32 address, u8 ram);
 
 void cartFree(struct Cart* cart);

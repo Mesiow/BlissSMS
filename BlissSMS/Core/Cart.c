@@ -3,6 +3,7 @@
 void cartInit(struct Cart* cart)
 {
 	cart->memory = NULL;
+	memset(cart->ram_banks, 0x0, 0x8000);
 	memset(cart->sram, 0x0, SRAM_SIZE);
 }
 
@@ -41,9 +42,17 @@ void cartLoad(struct Cart* cart, const char* path)
 	fclose(rom);
 }
 
-u8 cartReadU8(struct Cart* cart, u16 address)
+void cartWriteU8(struct Cart* cart, u8 value, u32 address)
 {
-	return cart->memory[address & (cart->romsize - 1)];
+	cart->ram_banks[address] = value;
+}
+
+u8 cartReadU8(struct Cart* cart, u32 address, u8 ram)
+{
+	if (ram)
+		return cart->ram_banks[address];
+
+	return cart->memory[address];
 }
 
 void cartFree(struct Cart* cart)
