@@ -1265,6 +1265,7 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 		//I/O instructions
 	case 0xA0: ldi(z80); break;
 	case 0xA3: outi(z80); break;
+	case 0xAB: outd(z80); break;
 	case 0xB0: ldir(z80); break;
 	case 0xB3: otir(z80); break;
 
@@ -2109,6 +2110,22 @@ void outi(struct Z80* z80)
 	ioWriteU8(z80->io, value, port);
 
 	z80->hl.value++;
+	z80->bc.hi--;
+
+	z80SetFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80->bc.hi == 0, FLAG_Z);
+
+	z80->cycles = 16;
+}
+
+void outd(struct Z80* z80)
+{
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	u8 port = z80->bc.lo;
+
+	ioWriteU8(z80->io, value, port);
+
+	z80->hl.value--;
 	z80->bc.hi--;
 
 	z80SetFlag(z80, FLAG_N);
