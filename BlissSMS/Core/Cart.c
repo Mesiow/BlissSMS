@@ -24,7 +24,6 @@ void cartLoad(struct Cart* cart, const char* path)
 	if (file_size == CART_32K || file_size == CART_64K
 		|| file_size == CART_128K || file_size == CART_256K) {
 		cart->memory = (u8*)malloc(file_size * sizeof(u8));
-		printf("cart size: 0x%05X\n", file_size);
 	}
 	else {
 		printf("--Cartridge size: 0x%05X not supported!--\n", file_size);
