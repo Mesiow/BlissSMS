@@ -24,10 +24,9 @@ void systemInit(struct System* sys)
 	ioConnectJoypad(&sys->io, &sys->joy);
 
 	cartInit(&sys->cart);
-	//cartLoad(&sys->cart, "roms/Astro Flash (Japan).sms");
-	//cartLoad(&sys->cart, "roms/Sonic The Hedgehog (USA, Europe).sms");
-	//cartLoad(&sys->cart, "test_roms/Not_Only_Words.sms");
-	cartLoad(&sys->cart, "roms/Teddy Boy (USA, Europe).sms");
+	cartLoad(&sys->cart, "roms/Sonic The Hedgehog (USA, Europe).sms");
+	//cartLoad(&sys->cart, "roms/Ninja Gaiden (Europe).sms");
+	//cartLoad(&sys->cart, "roms/Teddy Boy (USA, Europe).sms");
 	memoryBusLoadCart(&sys->bus, &sys->cart);
 
 	sys->running = 1;
@@ -39,6 +38,7 @@ void systemRunEmulation(struct System* sys)
 	if (sys->running) {
 		struct Vdp* vdp = &sys->vdp;
 		struct Z80* z80 = &sys->z80;
+		struct Joypad* joy = &sys->joy;
 
 		s32 cycles_this_frame = 0;
 		while (!vdpFrameComplete(vdp)) {
@@ -51,6 +51,7 @@ void systemRunEmulation(struct System* sys)
 
 			z80HandleInterrupts(z80, vdp);
 		}
+		joypadUpdate(joy);
 		vdpBufferPixels(vdp);
 	}
 }
@@ -70,6 +71,9 @@ void systemHandleInput(struct System *sys, sfEvent* ev)
 		if (ev->key.code == Right) joypadButtonPressed(joy, Right, 1);
 		if (ev->key.code == A) joypadButtonPressed(joy, A, 1);
 		if (ev->key.code == B) joypadButtonPressed(joy, B, 1);
+		if (ev->key.code == sfKeySpace) {
+			sys->z80.service_nmi = 1;
+		}
 	}
 	else if (ev->type == sfEvtKeyReleased) {
 		if (ev->key.code == Up) joypadButtonPressed(joy, Up, 0);
@@ -83,7 +87,7 @@ void systemHandleInput(struct System *sys, sfEvent* ev)
 
 void systemFree(struct System* sys)
 {
-	//cartFree(&sys->cart);
+	cartFree(&sys->cart);
 	vdpFree(&sys->vdp);
 }
 
