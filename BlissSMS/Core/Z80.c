@@ -426,6 +426,7 @@ void executeMainInstruction(struct Z80* z80, u8 opcode)
 
 		//Exchanges
 	case 0x08: ex(z80, &z80->af, &z80->shadowedregs.af); break;
+	case 0xE3: ex(z80, &z80->sp, &z80->hl); break;
 	case 0xEB: ex(z80, &z80->de, &z80->hl); break;
 	case 0xD9: exx(z80); break;
 
@@ -2047,11 +2048,28 @@ void rla(struct Z80* z80)
 
 void ex(struct Z80* z80, union Register* reg1, union Register* reg2)
 {
-	u16 temp_reg1 = reg1->value;
-	reg1->value = reg2->value;
-	reg2->value = temp_reg1;
-
 	z80->cycles = 4;
+	if (reg1 == &z80->sp) { //ex (sp), hl
+		u8 lo = z80ReadU8(z80, z80->sp);
+		u8 hi = z80ReadU8(z80, z80->sp + 1);
+
+		u16 hl_temp = z80->hl.value;
+		z80->hl.lo = lo;
+		z80->hl.hi = hi;
+
+		u8 hl_lo = hl_temp & 0xFF;
+		u8 hl_hi = (hl_temp >> 8) & 0xFF;
+
+		z80WriteU8(z80, hl_lo, z80->sp);
+		z80WriteU8(z80, hl_hi, z80->sp + 1);
+
+		z80->cycles += 15;
+	}
+	else {
+		u16 temp_reg1 = reg1->value;
+		reg1->value = reg2->value;
+		reg2->value = temp_reg1;
+	}
 }
 
 void exx(struct Z80* z80)
