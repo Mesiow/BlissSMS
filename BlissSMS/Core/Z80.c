@@ -1264,6 +1264,7 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 
 		//I/O instructions
 	case 0xA0: ldi(z80); break;
+	case 0xA2: ini(z80); break;
 	case 0xA3: outi(z80); break;
 	case 0xAB: outd(z80); break;
 	case 0xB0: ldir(z80); break;
@@ -2202,6 +2203,22 @@ void otir(struct Z80* z80)
 			z80->pc -= 2;
 	}
 	z80SetFlag(z80, (FLAG_Z | FLAG_N));
+}
+
+void ini(struct Z80* z80)
+{
+	u8 io_port = z80->bc.lo;
+	u8 value = ioReadU8(z80->io, io_port);
+
+	z80WriteU8(z80, value, z80->hl.value);
+
+	z80->hl.value++;
+	z80->bc.hi--;
+
+	z80SetFlag(z80, FLAG_N);
+	z80AffectFlag(z80, z80->bc.hi == 0, FLAG_Z);
+
+	z80->cycles = 16;
 }
 
 void ldir(struct Z80* z80)

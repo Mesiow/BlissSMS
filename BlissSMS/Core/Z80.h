@@ -214,6 +214,7 @@ void out(struct Z80* z80, u8 destPort, u8 sourceReg);
 void in(struct Z80* z80, u8 sourcePort, u8* destReg, u8 opcode);
 
 void otir(struct Z80* z80);
+void ini(struct Z80* z80);
 void ldir(struct Z80* z80);
 void ldi(struct Z80* z80);
 void ldd(struct Z80* z80);
