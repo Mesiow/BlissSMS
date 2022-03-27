@@ -21,6 +21,8 @@ int main(int argc, char *argv[]) {
 	struct System sms;
 	systemInit(&sms);
 
+	sfRenderWindow_setFramerateLimit(window, 60);
+
 	u8 running = 1;
 	sfEvent ev;
 	while (sfRenderWindow_isOpen(window)) {
@@ -38,7 +40,6 @@ int main(int argc, char *argv[]) {
 		systemRenderGraphics(&sms, window);
 
 		sfRenderWindow_display(window);
-
 	}
 
 	systemFree(&sms);
