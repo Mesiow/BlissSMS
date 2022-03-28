@@ -28,7 +28,21 @@ void ioWriteU8(struct Io* io, u8 value, u8 address)
 {
 	u8 even_address = ((address & 0x1) == 0);
 	if (address >= 0x0 && address <= 0x3F) {
-		if (even_address) writeMemoryControl(io->bus, value);
+		if (even_address)
+			writeMemoryControl(io->bus, value);
+		else {
+			io->nationalization_port = value;
+			//copy bits 5 and 7 to joypad port 2 so
+			//they can be read back from
+			u8 b5 = (io->nationalization_port >> 5) & 0x1;
+			u8 b7 = (io->nationalization_port >> 7) & 0x1;
+
+			if (b5) io->joy->joypad_port2 |= (1 << 6);
+			else io->joy->joypad_port2 &= ~(1 << 6);
+
+			if(b7) io->joy->joypad_port2 |= (1 << 7);
+			else io->joy->joypad_port2 &= ~(1 << 7);
+		}
 	}
 	else if (address >= 0x40 && address <= 0x7F) {
 		//writes to here goes to the psg
@@ -57,7 +71,9 @@ u8 ioReadU8(struct Io* io, u8 address)
 			return vdpReadControlPort(io->vdp);
 	}
 	else if (address >= 0xC0 && address <= 0xFF) {
-		if (even_address) return joypadReadPort(io->joy);
-		else return 0xFF;
+		if (even_address)
+			return io->joy->joypad_port;
+		else
+			return io->joy->joypad_port2;
 	}
 }

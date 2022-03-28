@@ -21,9 +21,10 @@ enum Button {
 struct Joypad {
 	u8 joypad_port;
 	u8 joypad_temp;
+
+	u8 joypad_port2;
 };
 
 void joypadInit(struct Joypad* joy);
 void joypadUpdate(struct Joypad* joy);
 void joypadButtonPressed(struct Joypad *joy, enum Button btn, u8 pressed);
-u8 joypadReadPort(struct Joypad* joy);

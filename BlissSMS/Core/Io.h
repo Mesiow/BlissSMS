@@ -2,6 +2,8 @@
 #include "Util.h"
 
 struct Io {
+	u8 nationalization_port;
+
 	struct Vdp* vdp;
 	struct Joypad* joy;
 	struct Bus* bus;

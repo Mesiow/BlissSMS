@@ -3,6 +3,7 @@
 void joypadInit(struct Joypad* joy)
 {
 	joy->joypad_port = 0xFF;
+	joy->joypad_port2 = 0xFF;
 	joy->joypad_temp = 0xFF;
 }
 
@@ -34,9 +35,4 @@ void joypadButtonPressed(struct Joypad* joy, enum Button btn, u8 pressed)
 			case B: joy->joypad_temp ^= (BIT_B); break;
 		}
 	}
-}
-
-u8 joypadReadPort(struct Joypad* joy)
-{
-	return joy->joypad_port;
 }
