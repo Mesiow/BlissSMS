@@ -1204,6 +1204,7 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 	case 0x43: loadMemReg16(z80, &z80->bc); break;
 	case 0x53: loadMemReg16(z80, &z80->de); break;
 	case 0x73: loadMemReg16(z80, &z80->sp); break;
+	case 0x57: loadAWithI(z80); break;
 	case 0x5F: loadAWithR(z80); break;
 	case 0x7B: load16Reg(z80, &z80->sp); z80->cycles += 4; break;
 	case 0x4B: load16Reg(z80, &z80->bc); z80->cycles += 4; break;
@@ -1563,6 +1564,18 @@ void loadAWithR(struct Z80* z80)
 	z80ClearFlag(z80, (FLAG_N | FLAG_H));
 	z80AffectFlag(z80, z80IsSigned8(z80->ir.lo), FLAG_S);
 	z80AffectFlag(z80, z80->ir.lo == 0, FLAG_Z);
+	z80AffectFlag(z80, z80->iff2, FLAG_PV);
+
+	z80->cycles = 9;
+}
+
+void loadAWithI(struct Z80* z80)
+{
+	z80->af.hi = z80->ir.hi;
+
+	z80ClearFlag(z80, (FLAG_N | FLAG_H));
+	z80AffectFlag(z80, z80IsSigned8(z80->ir.hi), FLAG_S);
+	z80AffectFlag(z80, z80->ir.hi == 0, FLAG_Z);
 	z80AffectFlag(z80, z80->iff2, FLAG_PV);
 
 	z80->cycles = 9;

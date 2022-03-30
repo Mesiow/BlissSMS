@@ -145,6 +145,7 @@ void loadReg(struct Z80* z80, u8* destReg, u8 sourceReg);
 void loadRegMem(struct Z80* z80, u8* destReg, union Register* reg);
 void loadReg8Mem(struct Z80* z80, union Register mem, u8 reg);
 void loadAWithR(struct Z80* z80);
+void loadAWithI(struct Z80* z80);
 void loadSpReg(struct Z80* z80, union Register* reg);
 
 //Arithmetic
