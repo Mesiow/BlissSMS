@@ -60,7 +60,7 @@ u8 ioReadU8(struct Io* io, u8 address)
 	u8 even_address = ((address & 0x1) == 0);
 	if (address >= 0x40 && address <= 0x7F) {
 		if (even_address)
-			return io->vdp->vcounter;
+			return io->vdp->vcount_port;
 		else
 			return io->vdp->hcounter;
 	}
