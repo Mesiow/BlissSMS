@@ -13,7 +13,9 @@ struct Cart {
 	u8 region;
 	u32 romsize;
 
+	char* sram_path;
 	u8 uses_sram;
+	u8 banks_sram;
 };
 
 void cartInit(struct Cart* cart);
@@ -22,4 +24,5 @@ void cartLoad(struct Cart* cart, char* path);
 void cartWriteU8(struct Cart* cart, u8 value, u32 address);
 u8 cartReadU8(struct Cart* cart, u32 address, u8 ram);
 
+void cartDumpSram(struct Cart* cart);
 void cartFree(struct Cart* cart);
