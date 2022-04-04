@@ -57,7 +57,6 @@ void memoryBusWriteU8(struct Bus* bus, u8 value, u16 address)
 			u32 ram_bank_addr = address + (0x4000 * bus->cart_ram_page);
 			ram_bank_addr -= 0x8000;
 			cartWriteU8(bus->cart, value, ram_bank_addr);
-			printf("write to sram\n");
 		}
 	}
 
@@ -165,7 +164,6 @@ u8 memoryBusHandleRomMappingRead(struct Bus* bus, u16 address, u8 romBank)
 			if (bus->page2_ram == 1) { //cart ram mapped here
 				u32 ram_bank_addr = address + (0x4000 * bus->cart_ram_page);
 				ram_bank_addr -= 0x8000;
-				printf("read from sram\n");
 				return cartReadU8(bus->cart, ram_bank_addr, 1);
 			}
 
