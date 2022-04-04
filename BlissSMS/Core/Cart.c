@@ -72,7 +72,6 @@ void cartLoad(struct Cart* cart, char* path)
 				cart->uses_sram = 1;
 				printf("cart uses sram\n");
 
-				//Determine rom size
 				fseek(sav, 0, SEEK_END);
 				u16 file_size = ftell(sav);
 				fseek(sav, 0, SEEK_SET);
@@ -107,7 +106,11 @@ void cartDumpSram(struct Cart* cart)
 			//dump sram to disk
 			FILE* sav = fopen(cart->sram_path, "w");
 			if (sav != NULL) {
-				fwrite(cart->ram_banks, sizeof(u8), 0x8000, sav);
+				fseek(sav, 0, SEEK_END);
+				u16 file_size = ftell(sav);
+				fseek(sav, 0, SEEK_SET);
+
+				fwrite(cart->ram_banks, sizeof(u8), file_size, sav);
 				fclose(sav);
 			}
 			if (cart->sram_path != NULL)
