@@ -1,5 +1,6 @@
 #include "Io.h"
 #include "Vdp.h"
+#include "Psg.h"
 #include "Joypad.h"
 #include "Bus.h"
 
@@ -12,6 +13,11 @@ void ioInit(struct Io* io)
 void ioConnectVdp(struct Io* io, struct Vdp* vdp)
 {
 	io->vdp = vdp;
+}
+
+void ioConnectPsg(struct Io* io, struct Psg* psg)
+{
+	io->psg = psg;
 }
 
 void ioConnectJoypad(struct Io* io, struct Joypad* joy)
@@ -45,7 +51,7 @@ void ioWriteU8(struct Io* io, u8 value, u8 address)
 		}
 	}
 	else if (address >= 0x40 && address <= 0x7F) {
-		//writes to here goes to the psg
+		psgWritePort(io->psg, value);
 	}
 	else if (address >= 0x80 && address <= 0xBF) {
 		if (even_address)
