@@ -41,11 +41,19 @@ struct Vdp {
 	u16 cycles;
 
 	//Vdp Ports
-	u16 vdpControl;
-	u16 vdpData;
+	u16 vdp_control;
+	u16 vdp_data;
 	u16 vcounter;
 	u16 hcounter;
-	u8 lineCounter;
+
+	//value returned when games read from vcount because scanlines go up to 262
+	//which a byte cannot return so we need to keep it in the 0 - 255 range.
+	//lthough the VDP will go through 262 or 313 scanlines it can only do this by going over scanlines more than once in each frame.
+	//This means the vcounter will go from 0 to 255 but some of these will be repeated giving a total of 262. 
+	//The VDP will go through 262 or 313 scanlines it can only do this by going over scanlines more than once in each frame.
+	//This means the vcounter will go from 0 to 255 but some of these will be repeated giving a total of 262
+	u8 vcount_port; 
+	u8 line_counter;
 
 	//Flags
 	u8 status_flags; //holds frame interrupt pending flag, sprite overflow flag and sprite collision flag
@@ -57,6 +65,12 @@ struct Vdp {
 	u8 frame_int_pending;
 	u8 line_int_pending;
 
+	u8 sprite_overflow;
+	u8 sprite_collision;
+	u8 y_scroll;
+
+	u8 priority_buffer[DISPLAY_WIDTH]; //used for checking priority of sprites/tiles
+
 	struct sfImage* pixels;
 	struct sfTexture* framebuffer;
 	struct sfSprite* frame;
@@ -66,12 +80,14 @@ struct Vdp {
 	u8 frame_complete;
 
 	struct Io* io;
+	struct System* sys;
 };
 
 void vdpInit(struct Vdp* vdp);
 void vdpFree(struct Vdp* vdp);
 void vdpConnectIo(struct Vdp *vdp, struct Io* io);
 void vdpUpdate(struct Vdp *vdp, u8 cycles);
+void vdpScanlineUpdate(struct Vdp* vdp);
 void vdpDisplayGraphics(struct Vdp* vdp, sfRenderWindow *window);
 void vdpRender(struct Vdp* vdp);
 void vdpRenderBackground(struct Vdp* vdp);
