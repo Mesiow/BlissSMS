@@ -253,15 +253,10 @@ void vdpRenderBackground(struct Vdp* vdp)
 				color_bit = x; //color read from right to left
 
 			//Get which palette for this pattern line
-			u8 palette = 0;
-			u8 bit = testBit(d4, color_bit);
-			palette = (bit << 3);
-			bit = testBit(d3, color_bit);
-			palette |= (bit << 2);
-			bit = testBit(d2, color_bit);
-			palette |= (bit << 1);
-			bit = testBit(d1, color_bit);
-			palette |= bit;
+			u8 palette = testBit(d4, color_bit) << 3;
+			palette |= testBit(d3, color_bit) << 2;
+			palette |= testBit(d2, color_bit) << 1;
+			palette |= testBit(d1, color_bit);
 
 			//a tile can only have high priority if it isnt palette 0
 			if (palette == 0) priority = 0;
