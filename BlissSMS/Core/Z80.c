@@ -2,6 +2,7 @@
 #include "Bus.h"
 #include "Io.h"
 #include "Vdp.h"
+#include "System.h"
 
 void cpmLoadRom(struct Z80* z80, const char* path)
 {
@@ -174,6 +175,7 @@ void z80HandleInterrupts(struct Z80* z80, struct Vdp* vdp)
 		//Maskable interrupts enabled
 		if (z80->iff1) {
 			if (z80->interrupt_mode == One) {
+				z80->irq_requested = 0;
 				//disable interrupts and jump to routine
 				z80->iff1 = z80->iff2 = 0;
 				z80->halted = 0;
@@ -181,6 +183,11 @@ void z80HandleInterrupts(struct Z80* z80, struct Vdp* vdp)
 			}
 		}
 	}
+}
+
+void z80RequestIrq(struct System* sys)
+{
+	sys->z80.irq_requested = 1;
 }
 
 u8 z80OverflowFromAdd8(u8 op1, u8 op2, u8 carry)

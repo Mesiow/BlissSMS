@@ -63,6 +63,7 @@ struct Z80 {
 	u8 iff2;
 	u8 process_interrupt_delay; //flag used for instruction delay after ei is executed
 	u8 halted;
+	u8 irq_requested;
 
 	u8 service_nmi;
 	u8 last_daa_operation;
@@ -89,6 +90,7 @@ void z80ClearFlagCopyBits(struct Z80* z80);
 u8 getFlag(struct Z80* z80, u8 flag);
 
 void z80HandleInterrupts(struct Z80* z80, struct Vdp *vdp);
+void z80RequestIrq(struct System* sys);
 
 u8 z80OverflowFromAdd8(u8 op1, u8 op2, u8 carry);
 u8 z80OverflowFromSub8(u8 op1, u8 op2, u8 carry);

@@ -9,7 +9,7 @@ void memoryBusInit(struct Bus* bus)
 	memset(bus->bios, 0x0, BIOS_SIZE);
 
 	bus->wram_enabled = 0;
-	bus->cart_slot_enabled = 0;
+	bus->cart_slot_enabled = 1;
 	bus->bios_enabled = 0;
 	bus->io_enabled = 0;
 	bus->cart_loaded = 0;
