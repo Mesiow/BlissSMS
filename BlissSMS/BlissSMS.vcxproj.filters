@@ -45,6 +45,9 @@
     <ClCompile Include="Core\Joypad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Psg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Z80.h">
@@ -72,6 +75,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core\Joypad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Psg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

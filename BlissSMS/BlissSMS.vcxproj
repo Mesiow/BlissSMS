@@ -152,6 +152,7 @@
     <ClCompile Include="Core\Io.c" />
     <ClCompile Include="Core\Joypad.c" />
     <ClCompile Include="Core\Log.c" />
+    <ClCompile Include="Core\Psg.c" />
     <ClCompile Include="Core\System.c" />
     <ClCompile Include="Core\Util.c" />
     <ClCompile Include="Core\Vdp.c" />
@@ -164,6 +165,7 @@
     <ClInclude Include="Core\Io.h" />
     <ClInclude Include="Core\Joypad.h" />
     <ClInclude Include="Core\Log.h" />
+    <ClInclude Include="Core\Psg.h" />
     <ClInclude Include="Core\System.h" />
     <ClInclude Include="Core\Util.h" />
     <ClInclude Include="Core\Vdp.h" />
