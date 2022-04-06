@@ -2,31 +2,41 @@
 
 void systemInit(struct System* sys)
 {
-	//Memory init
 	ioInit(&sys->io);
 	memoryBusInit(&sys->bus);
 	memoryBusLoadBios(&sys->bus, "test_roms/bios13fx.sms");
 	ioConnectBus(&sys->io, &sys->bus);
 
-	//Cpu init
 	z80Init(&sys->z80);
 	z80ConnectBus(&sys->z80, &sys->bus);
 	z80ConnectIo(&sys->z80, &sys->io);
-	//cpmLoadRom(&sys->z80, "test_roms/prelim.com"); //pass
-	//cpmLoadRom(&sys->z80, "test_roms/zexdoc.cim"); //pass
-
-	//Vdp init
+	
 	vdpInit(&sys->vdp);
 	vdpConnectIo(&sys->vdp, &sys->io);
 	ioConnectVdp(&sys->io, &sys->vdp);
+	sys->vdp.sys = &sys;
+
+	psgInit(&sys->psg);
+	ioConnectPsg(&sys->io, &sys->psg);
 
 	joypadInit(&sys->joy);
 	ioConnectJoypad(&sys->io, &sys->joy);
 
 	cartInit(&sys->cart);
-	cartLoad(&sys->cart, "roms/Sonic The Hedgehog (USA, Europe).sms");
-	//cartLoad(&sys->cart, "roms/Ninja Gaiden (Europe).sms");
-	//cartLoad(&sys->cart, "roms/Teddy Boy (USA, Europe).sms");
+	//cartLoad(&sys->cart, "test_roms/VDPTEST");
+	//cartLoad(&sys->cart, "roms/Astro Flash (Japan)"); //boots and runs
+	//cartLoad(&sys->cart, "roms/Sagaia (Europe)"); //breaks in game (corrupted sprites)
+	//cartLoad(&sys->cart, "roms/Zillion (USA)"); //boots and runs
+	//cartLoad(&sys->cart, "roms/Spider-Man vs. The Kingpin (USA, Europe)"); //boots
+	//cartLoad(&sys->cart, "roms/Spider-Man - Return of the Sinister Six (Europe)"); //does not boot
+	cartLoad(&sys->cart, "roms/Sonic The Hedgehog (USA, Europe)"); //boots and runs
+	//cartLoad(&sys->cart, "roms/Ninja Gaiden (Europe)"); //boots and runs
+	//cartLoad(&sys->cart, "roms/Teddy Boy (USA, Europe)"); //boots and runs
+	//cartLoad(&sys->cart, "roms/Golden Axe Warrior (USA, Europe)"); //boots and runs
+	//cartLoad(&sys->cart, "roms/Road Rash (Europe)"); //boots and runs
+	//cartLoad(&sys->cart, "roms/Out Run (World)"); //boots and runs
+	//cartLoad(&sys->cart, "roms/Master of Darkness (Europe)"); //boots and runs
+	//cartLoad(&sys->cart, "roms/Phantasy Star (USA, Europe) (Rev 2)"); //boots and runs
 	memoryBusLoadCart(&sys->bus, &sys->cart);
 
 	sys->running = 1;
@@ -37,6 +47,7 @@ void systemRunEmulation(struct System* sys)
 {
 	if (sys->running) {
 		struct Vdp* vdp = &sys->vdp;
+		struct Psg* psg = &sys->psg;
 		struct Z80* z80 = &sys->z80;
 		struct Joypad* joy = &sys->joy;
 
@@ -46,6 +57,7 @@ void systemRunEmulation(struct System* sys)
 			cycles_this_frame += cycles;
 
 			vdpUpdate(vdp, cycles);
+			psgUpdate(psg, cycles);
 			if (sys->z80.process_interrupt_delay)
 				continue;
 
@@ -87,6 +99,7 @@ void systemHandleInput(struct System *sys, sfEvent* ev)
 
 void systemFree(struct System* sys)
 {
+	cartDumpSram(&sys->cart);
 	cartFree(&sys->cart);
 	vdpFree(&sys->vdp);
 }
