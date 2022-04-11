@@ -88,15 +88,15 @@ void cartLoad(struct Cart* cart, char* path)
 
 void cartWriteU8(struct Cart* cart, u8 value, u32 address)
 {
-	cart->ram_banks[address] = value;
+	cart->ram_banks[address & 0x7FFF] = value;
 }
 
 u8 cartReadU8(struct Cart* cart, u32 address, u8 ram)
 {
 	if (ram)
-		return cart->ram_banks[address];
+		return cart->ram_banks[address & 0x7FFF];
 
-	return cart->memory[address];
+	return cart->memory[address & (cart->romsize - 1)];
 }
 
 void cartDumpSram(struct Cart* cart)
