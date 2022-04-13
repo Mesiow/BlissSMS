@@ -1145,6 +1145,8 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 
 	case 0xE9: jpMemIx(z80); break;
 
+	case 0xE3: ex(z80, &z80->sp, &z80->ix); break;
+
 	case 0xE1: pop(z80, &z80->ix); break;
 	case 0xE5: push(z80, &z80->ix); break;
 	default:
@@ -1407,6 +1409,8 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 	case 0xBE: cpMemIy(z80); break;
 
 	case 0xE9: jpMemIy(z80); break;
+
+	case 0xE3: ex(z80, &z80->sp, &z80->iy); break;
 
 	case 0xE1: pop(z80, &z80->iy); break;
 	case 0xE5: push(z80, &z80->iy); break;
@@ -2069,19 +2073,19 @@ void rla(struct Z80* z80)
 void ex(struct Z80* z80, union Register* reg1, union Register* reg2)
 {
 	z80->cycles = 4;
-	if (reg1 == &z80->sp) { //ex (sp), hl
+	if (reg1 == &z80->sp) { //ex (sp), hl, ex (sp), ix, ex (sp), iy
 		u8 lo = z80ReadU8(z80, z80->sp);
 		u8 hi = z80ReadU8(z80, z80->sp + 1);
 
-		u16 hl_temp = z80->hl.value;
-		z80->hl.lo = lo;
-		z80->hl.hi = hi;
+		u16 reg2_temp = reg2->value;
+		reg2->lo = lo;
+		reg2->hi = hi;
 
-		u8 hl_lo = hl_temp & 0xFF;
-		u8 hl_hi = (hl_temp >> 8) & 0xFF;
+		u8 reg2_lo = reg2_temp & 0xFF;
+		u8 reg2_hi = (reg2_temp >> 8) & 0xFF;
 
-		z80WriteU8(z80, hl_lo, z80->sp);
-		z80WriteU8(z80, hl_hi, z80->sp + 1);
+		z80WriteU8(z80, reg2_lo, z80->sp);
+		z80WriteU8(z80, reg2_hi, z80->sp + 1);
 
 		z80->cycles += 15;
 	}
