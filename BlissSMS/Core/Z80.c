@@ -171,7 +171,7 @@ void z80HandleInterrupts(struct Z80* z80, struct Vdp* vdp)
 		rst(z80, NMI_VECTOR);
 	}
 
-	if (vdpPendingInterrupts(vdp)) {
+	if (vdpPendingInterrupts(vdp) || z80->irq_requested) {
 		//Maskable interrupts enabled
 		if (z80->iff1) {
 			if (z80->interrupt_mode == One) {
@@ -1881,7 +1881,6 @@ void ret(struct Z80* z80)
 void reti(struct Z80* z80)
 {
 	ret(z80);
-	z80->iff1 = z80->iff2;
 	z80->cycles += 4;
 }
 
