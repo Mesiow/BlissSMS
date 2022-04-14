@@ -19,12 +19,13 @@ void vdpInit(struct Vdp* vdp)
 
 	//bits 0 - 2 should be set otherwise vdp will
 	//fetch pattern and name table data incorrectly
-	vdp->registers[0x4] = 0x7;
+	vdp->registers[0x4] = 0xFF;
 
 	//defaults sprite attribute table to 0x3F00
 	vdp->registers[0x5] = 0xFF;
 	//unused bits should be set to 1
 	vdp->registers[0x6] = 0xFB;
+	vdp->registers[0xA] = 0xFF;
 
 	vdp->state = Visible;
 	vdp->cycles = 0;
@@ -100,7 +101,6 @@ void vdpUpdate(struct Vdp *vdp, u8 cycles)
 			}
 		}
 
-		
 		vdp->cycles -= CYCLES_PER_SCANLINE;
 		vdp->vcounter++;
 		vdp->vcount_port++;
@@ -263,9 +263,7 @@ void vdpRenderBackground(struct Vdp* vdp)
 			if (palette_select) palette += 16; //sprite palette is used
 
 			u8 color = 0;
-			u8 masking = 0;
 			if (mask_first_col && (xpixel_pos < 8)) {
-				masking = 1;
 				u8 overscan_bgdrop_color = vdp->registers[0x7] & 0xF;
 				color = vdp->cram[overscan_bgdrop_color + 16]; //color is from sprite palette
 			}
@@ -302,21 +300,18 @@ void vdpRenderSprites(struct Vdp* vdp)
 	u8 sprite_count = 0;
 	u8 sprites_drawn[DISPLAY_WIDTH] = { 0 };
 
-	s32 row = line;
-	row /= 8; //a row is 8 pixels large
+	u8 sprite_size = 8;
+	if (is_sprite_8x16 || is_sprite_doubled)
+		sprite_size = 16;
 
 	for (s32 sprite = 0; sprite < 64; sprite++) { //max of 64 sprites
 		//get y position of sprite
-		s32 y = vdp->vram[sat_base_addr + sprite];
+		s16 y = vdp->vram[sat_base_addr + sprite];
 							  //when sprite y is 0xD0
 		if (y == 0xD0) break; //sprites not drawn in 192 line display mode if y == 0xD0
 		
-		if (y > 0xD0) y -= 0x100; //wrap when top part of sprite is off screen
+		if (y > 192) y -= 0x100; //wrap when top part of sprite is off screen
 		y++;//y position is always y + 1
-
-		s32 sprite_size = 8;
-		if (is_sprite_8x16 || is_sprite_doubled) 
-			sprite_size = 16;
 
 		//Is sprite in range of visible display
 		if ((line >= y) && (line < (y + sprite_size))) {
@@ -328,14 +323,14 @@ void vdpRenderSprites(struct Vdp* vdp)
 
 			s32 offset_to_x_coord = 128 + (sprite * 2);
 			s32 sprite_x = vdp->vram[sat_base_addr + offset_to_x_coord];
-			u16 pattern_index = vdp->vram[sat_base_addr + (offset_to_x_coord + 1)];
+			u16 pattern_index = vdp->vram[sat_base_addr + 1 + offset_to_x_coord];
 
 			if (shift_sprites_left) sprite_x -= 8;
 			if (use_second_pattern) pattern_index += 256;
 
 			if (is_sprite_8x16) {
 				//bit 0 of pattern index ignored
-				if (y < (line + 9))
+				if(y < (line + 9))
 					pattern_index &= ~0x1;
 			}
 
@@ -345,7 +340,8 @@ void vdpRenderSprites(struct Vdp* vdp)
 
 			//get mem location for current line being drawn
 			//of tile, each line is 4 bytes
-			pattern_index += (line - y) * 4;
+			pattern_index += (4 * (line - y));
+			
 
 			//get pattern line data
 			u8 d1 = vdp->vram[pattern_index];
@@ -565,11 +561,9 @@ u16 vdpGetNameTableBaseAddress(struct Vdp* vdp)
 
 u16 vdpGetSpriteAttributeTableBaseAddress(struct Vdp* vdp)
 {
-	u8 sprite_table_addr = vdp->registers[0x5];
-	
 	//bit 0 and 7 ignored
-	sprite_table_addr &= 0x7E;
-	u16 base_addr = ((u16)sprite_table_addr) << 7;
+	u8 sprite_table_addr = vdp->registers[0x5];
+	u16 base_addr = (sprite_table_addr << 7) & 0x3F00;
 	
 	return base_addr;
 }
