@@ -2229,22 +2229,22 @@ void otir(struct Z80* z80)
 {
 	z80->cycles = ((z80->bc.hi != 0) ? 21 : 16);
 
-	if (z80->bc.hi != 0) {
-		//Byte from address hl written to port c
-		u8 value = z80ReadU8(z80, z80->hl.value);
-		u8 io_port = z80->bc.lo;
-		ioWriteU8(z80->io, value, io_port);
+	//Byte from address hl written to port c
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	u8 io_port = z80->bc.lo;
+	ioWriteU8(z80->io, value, io_port);
 
-		z80->hl.value++;
-		z80->bc.hi--;
+	z80->hl.value++;
+	z80->bc.hi--;
 
-		//If byte counter (B) is not 0, pc is decremented by 2 and the instruction
-		//will be repeated (also interrupts will be checked and possibly triggered
-		//until the instructions terminates once B becomes 0
-		if (z80->bc.hi != 0)
-			z80->pc -= 2;
-	}
-	z80SetFlag(z80, (FLAG_Z | FLAG_N));
+	//If byte counter (B) is not 0, pc is decremented by 2 and the instruction
+	//will be repeated (also interrupts will be checked and possibly triggered
+	//until the instructions terminates once B becomes 0
+	if (z80->bc.hi != 0)
+		z80->pc -= 2;
+	
+	z80AffectFlag(z80, z80->bc.hi == 0, FLAG_Z);
+	z80SetFlag(z80, FLAG_N);
 }
 
 void ini(struct Z80* z80)
@@ -2267,21 +2267,20 @@ void ldir(struct Z80* z80)
 {
 	z80->cycles = ((z80->bc.value != 0) ? 21 : 16);
 
+	//Transfers bytes from source address hl to destination 
+	//address de, bc times
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	z80WriteU8(z80, value, z80->de.value);
+
+	z80->hl.value++;
+	z80->de.value++;
+	z80->bc.value--;
+
 	if (z80->bc.value != 0) {
-		//Transfers bytes from source address hl to destination 
-		//address de, bc times
-		u8 value = z80ReadU8(z80, z80->hl.value);
-		z80WriteU8(z80, value, z80->de.value);
-
-		z80->hl.value++;
-		z80->de.value++;
-		z80->bc.value--;
-
-		if (z80->bc.value != 0) {
-			z80->pc -= 2;
-		}
-		z80AffectFlag(z80, z80->bc.value != 0, FLAG_PV);
+		z80->pc -= 2;
 	}
+
+	z80AffectFlag(z80, z80->bc.value != 0, FLAG_PV);
 	z80ClearFlag(z80, (FLAG_N | FLAG_H));
 }
 
