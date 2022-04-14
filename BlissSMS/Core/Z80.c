@@ -1088,6 +1088,8 @@ void executeIxInstruction(struct Z80* z80, u8 opcode)
 	case 0x75: loadIxReg(z80, z80->hl.lo); break;
 	case 0x77: loadIxReg(z80, z80->af.hi); break;
 
+	case 0xF9: loadSpReg(z80, &z80->ix); break;
+
 		//Arithmetic
 	case 0x09: addReg16(z80, &z80->ix, &z80->bc); break;
 	case 0x19: addReg16(z80, &z80->ix, &z80->de); break;
@@ -1355,6 +1357,8 @@ void executeIyInstruction(struct Z80* z80, u8 opcode)
 	case 0x74: loadIyReg(z80, z80->hl.hi); break;
 	case 0x75: loadIyReg(z80, z80->hl.lo); break;
 	case 0x77: loadIyReg(z80, z80->af.hi); break;
+
+	case 0xF9: loadSpReg(z80, &z80->iy); break;
 
 		//Arithmetic
 	case 0x09: addReg16(z80, &z80->iy, &z80->bc); break;
