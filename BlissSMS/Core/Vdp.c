@@ -116,16 +116,10 @@ void vdpScanlineUpdate(struct Vdp* vdp)
 		vdp->line_counter = vdp->registers[0xA];
 
 	switch (vdp->vcounter) {
-		case 193: {
-			//attempt to generate frame interrupt (Vblank period)
-			vdp->y_scroll = vdp->registers[0x9]; //y scroll is only updated once the display enters vblank
-			vdp->frame_int_pending = 1;
-		}
-		break;
-		case 218: {
-			vdp->vcount_port = 213;
-		}
-		break;
+		case 193: vdp->y_scroll = vdp->registers[0x9]; break; //y scroll is only updated once the display enters vblank
+		//attempt to generate frame interrupt (Vblank period)
+		case 196: vdp->frame_int_pending = 1; break;
+		case 218: vdp->vcount_port = 213; break;
 		case 262: {
 			vdp->frame_complete = 1;
 			vdp->vcounter = 0;
