@@ -1,5 +1,9 @@
 # BlissSMS
-### 🌟Goal: To be able to play most commercial games and have a simple usable frontend🌟
+### 🌟Status: Currently can play most/if not all games🌟
+### Todo: 
+  - Implement audio
+  - Proper saving for all games
+  - Implement simplistic frontend
 
 ## Z80 Cpu
 ### Passes zexdoc instruction exerciser
