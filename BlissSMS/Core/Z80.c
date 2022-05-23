@@ -1282,6 +1282,7 @@ void executeExtendedInstruction(struct Z80* z80, u8 opcode)
 	case 0xAB: outd(z80); break;
 	case 0xB0: ldir(z80); break;
 	case 0xB3: otir(z80); break;
+	case 0xBB: otdr(z80); break;
 
 	default:
 		printf("\n--Unimplemented Extended Instruction--: 0x%02X\n", opcode);
@@ -2246,6 +2247,25 @@ void otir(struct Z80* z80)
 	if (z80->bc.hi != 0)
 		z80->pc -= 2;
 	
+	z80AffectFlag(z80, z80->bc.hi == 0, FLAG_Z);
+	z80SetFlag(z80, FLAG_N);
+}
+
+void otdr(struct Z80* z80)
+{
+	z80->cycles = ((z80->bc.hi != 0) ? 21 : 16);
+
+	//Byte from address hl written to port c
+	u8 value = z80ReadU8(z80, z80->hl.value);
+	u8 io_port = z80->bc.lo;
+	ioWriteU8(z80->io, value, io_port);
+
+	z80->hl.value--;
+	z80->bc.hi--;
+
+	if (z80->bc.hi != 0)
+		z80->pc -= 2;
+
 	z80AffectFlag(z80, z80->bc.hi == 0, FLAG_Z);
 	z80SetFlag(z80, FLAG_N);
 }
