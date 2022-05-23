@@ -17,3 +17,5 @@ void ioConnectJoypad(struct Io* io, struct Joypad* joy);
 void ioConnectBus(struct Io* io, struct Bus* bus);
 void ioWriteU8(struct Io *io, u8 value, u8 address);
 u8 ioReadU8(struct Io* io, u8 address);
+
+void ioResetButtonPressed(struct Io* io, u8 pressed);

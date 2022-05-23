@@ -15,6 +15,17 @@
 #define MAX_CYCLES_PER_FRAME SCANLINES_PER_FRAME * CYCLES_PER_SCANLINE
 
 
+struct ApuCallbackData {
+	s8 tone0;
+	s8 tone1;
+	s8 tone2;
+	s8 noise;
+};
+
+
+typedef void (*sms_apu_callback)(void* user, struct ApuCallbackData* data);
+
+
 struct System {
 	struct Bus bus;
 	struct Io io;
@@ -28,6 +39,10 @@ struct System {
 
 	u8 running;
 	u8 run_debugger;
+
+	sms_apu_callback apu_callback;
+	u32 apu_callback_freq;
+	s32 apu_callback_counter;
 };
 
 void systemInit(struct System* sys);
@@ -37,3 +52,5 @@ void systemHandleInput(struct System *sys, sfEvent* ev);
 void systemFree(struct System* sys);
 
 void tickCpu(struct System* sys);
+
+void systemSetApuCallback(struct System* sys, sms_apu_callback cb, void* user, u32 freq);

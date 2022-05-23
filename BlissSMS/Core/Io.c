@@ -83,3 +83,13 @@ u8 ioReadU8(struct Io* io, u8 address)
 			return io->joy->joypad_port2;
 	}
 }
+
+void ioResetButtonPressed(struct Io* io, u8 pressed)
+{
+	if (pressed) {
+		io->joy->joypad_port2 &= ~(1 << 4); //0 = pressed, 1 = not pressed
+	}
+	else {
+		io->joy->joypad_port2 |= (1 << 4);
+	}
+}
