@@ -1,0 +1,6 @@
+.DS_Store
+BlissCore/.build/
+BlissCore/.swiftpm/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+DerivedData/
