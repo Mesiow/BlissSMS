@@ -10,22 +10,19 @@ BlissSMS-iOS/
 ├── BlissSMS/                 the iOS app (SwiftUI)
 │   ├── Library/              ROM library: import from Files, cartridge cards, ROM info
 │   └── Game/                 play screen: video, touch pad, controller/keyboard input
-├── BlissCore/                Swift package with the emulator core
-│   └── Sources/BlissCore/Core/   mirrors BlissSMS/Core/*.c
-│       ├── System.swift      System.c  (wires everything together, runs a frame)
-│       ├── Z80.swift         Z80.c
-│       ├── Bus.swift         Bus.c     (memory map + Sega mapper)
-│       ├── Cart.swift        Cart.c    (ROM + cart ram / .sav files)
-│       ├── Io.swift          Io.c      (port routing)
-│       ├── Vdp.swift         Vdp.c     (video)
-│       ├── Joypad.swift      Joypad.c
-│       ├── Psg.swift         Psg.c     (sound, finished: tones, noise, sample output)
-│       ├── SaveState.swift   save states (new, not in the C code)
-│       ├── Util.swift        Util.c
-│       └── Cpm.swift         the CP/M test stub from Z80.c (for zexdoc/prelim)
-└── Tools/
-    ├── make_icon.py          draws the pixel-art app icon
-    └── translate_z80_tables.py   generates the Swift opcode tables from Z80.c
+└── BlissCore/                Swift package with the emulator core
+    └── Sources/BlissCore/Core/   mirrors BlissSMS/Core/*.c
+        ├── System.swift      System.c  (wires everything together, runs a frame)
+        ├── Z80.swift         Z80.c
+        ├── Bus.swift         Bus.c     (memory map + Sega mapper)
+        ├── Cart.swift        Cart.c    (ROM + cart ram / .sav files)
+        ├── Io.swift          Io.c      (port routing)
+        ├── Vdp.swift         Vdp.c     (video)
+        ├── Joypad.swift      Joypad.c
+        ├── Psg.swift         Psg.c     (sound, finished: tones, noise, sample output)
+        ├── SaveState.swift   save states (new, not in the C code)
+        ├── Util.swift        Util.c
+        └── Cpm.swift         the CP/M test stub from Z80.c (for zexdoc/prelim)
 ```
 
 Names follow the C code: `z80Foo(z80, ...)` is `foo(...)` on the `Z80` class, and

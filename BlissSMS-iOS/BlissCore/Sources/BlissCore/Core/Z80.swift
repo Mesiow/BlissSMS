@@ -7,7 +7,7 @@
 // Where C passes a register pointer, Swift passes the value and returns the result:
 //     incReg8(z80, &z80->bc.hi);   ->   bc.hi = incReg8(bc.hi)
 //     addReg8(z80, &z80->af.hi, z80->bc.lo);   ->   addReg8(bc.lo)   (dest is always A)
-// The opcode tables were generated from Z80.c with Tools/translate_z80_tables.py.
+// The opcode tables were generated from Z80.c with a small translation script.
 //
 // Behaviour matches the C core (it passes zexdoc), including its quirks:
 //  - addReg16 always takes 15 cycles (the C `if (...);` typo adds +4 for HL too)

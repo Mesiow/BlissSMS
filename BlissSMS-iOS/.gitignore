@@ -4,3 +4,4 @@ BlissCore/.swiftpm/
 *.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
 DerivedData/
+Tools/
